@@ -30,13 +30,16 @@ public static int DAY_OF_WEEK_REFERENCE = 167;
     }
 
     private BigDecimal calculatePlannedHours() {
+        if (getTimeFrom() == null || getTimeTo() == null) {
+            return BigDecimal.ZERO;
+        }
         LocalTime from = getTimeFrom().toLocalDateTime().toLocalTime();
         LocalTime to = getTimeTo().toLocalDateTime().toLocalTime();
         long minutes = Duration.between(from, to).toMinutes();
         if (minutes < 0) {
             minutes += Duration.ofDays(1).toMinutes();
         }
-        return BigDecimal.valueOf(minutes).divide(BigDecimal.valueOf(60), 10, RoundingMode.HALF_UP).stripTrailingZeros();
+        return BigDecimal.valueOf(minutes).divide(BigDecimal.valueOf(60), 2, RoundingMode.HALF_UP);
     }
 
     /**
