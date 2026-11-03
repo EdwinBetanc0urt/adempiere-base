@@ -29,17 +29,56 @@ public static int DAY_OF_WEEK_REFERENCE = 167;
         super(ctx, rs, trxName);
     }
 
-    private BigDecimal calculatePlannedHours() {
+    private static final long MINUTES_PER_DAY = Duration.ofDays(1).toMinutes();
+    private static final long MINUTES_PER_WEEK = MINUTES_PER_DAY * 7;
+
+    private long calculatePlannedMinutes() {
         if (getTimeFrom() == null || getTimeTo() == null) {
-            return BigDecimal.ZERO;
+            return 0;
         }
         LocalTime from = getTimeFrom().toLocalDateTime().toLocalTime();
         LocalTime to = getTimeTo().toLocalDateTime().toLocalTime();
         long minutes = Duration.between(from, to).toMinutes();
         if (minutes < 0) {
-            minutes += Duration.ofDays(1).toMinutes();
+            minutes += MINUTES_PER_DAY;
         }
-        return BigDecimal.valueOf(minutes).divide(BigDecimal.valueOf(60), 2, RoundingMode.HALF_UP);
+        return minutes;
+    }
+
+    private BigDecimal calculatePlannedHours() {
+        return BigDecimal.valueOf(calculatePlannedMinutes()).divide(BigDecimal.valueOf(60), 2, RoundingMode.HALF_UP);
+    }
+
+    private long[] getWeeklyInterval() {
+        if (getTimeFrom() == null || getTimeTo() == null || getDayOfWeek() == null) {
+            return null;
+        }
+        int dayIndex;
+        try {
+            dayIndex = Integer.parseInt(getDayOfWeek().trim()) - 1;
+        } catch (NumberFormatException e) {
+            return null;
+        }
+        if (dayIndex < 0 || dayIndex > 6) {
+            return null;
+        }
+        LocalTime from = getTimeFrom().toLocalDateTime().toLocalTime();
+        long start = dayIndex * MINUTES_PER_DAY + from.getHour() * 60L + from.getMinute();
+        return new long[] {start, start + calculatePlannedMinutes()};
+    }
+
+    private boolean overlapsWith(MServiceSchedule other) {
+        long[] own = getWeeklyInterval();
+        long[] candidate = other.getWeeklyInterval();
+        if (own == null || candidate == null) {
+            return false;
+        }
+        for (long shift : new long[] {-MINUTES_PER_WEEK, 0, MINUTES_PER_WEEK}) {
+            if (candidate[0] + shift < own[1] && own[0] < candidate[1] + shift) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -56,18 +95,16 @@ public static int DAY_OF_WEEK_REFERENCE = 167;
         BigDecimal plannedHours = calculatePlannedHours();
         setPlannedHours(plannedHours);
         if (getS_Resource_ID() > 0
-                && (newRecord || is_ValueChanged(COLUMNNAME_TimeFrom) || is_ValueChanged(COLUMNNAME_TimeTo) || is_ValueChanged(COLUMNNAME_S_Resource_ID))) {
-            String whereClause = " S_Resource_ID = ? " +
-                " AND DayOfWeek = ? " +
-                " AND S_ServiceSchedule_ID <> ? " +
-                " AND CAST(TimeTo AS TIME) > CAST(? AS TIME) " +
-                " AND CAST(TimeFrom AS TIME) < CAST(? AS TIME) ";
-            MServiceSchedule overlappingSchedule = new Query(getCtx(), Table_Name, whereClause, get_TrxName())
-                .setParameters(getS_Resource_ID(), getDayOfWeek(), getS_ServiceSchedule_ID(), getTimeFrom(), getTimeTo())
+                && (newRecord || is_ValueChanged(COLUMNNAME_TimeFrom) || is_ValueChanged(COLUMNNAME_TimeTo) || is_ValueChanged(COLUMNNAME_S_Resource_ID) || is_ValueChanged(COLUMNNAME_DayOfWeek))) {
+            String whereClause = "S_Resource_ID = ? AND S_ServiceSchedule_ID <> ?";
+            boolean hasOverlap = new Query(getCtx(), Table_Name, whereClause, get_TrxName())
+                .setParameters(getS_Resource_ID(), getS_ServiceSchedule_ID())
                 .setOnlyActiveRecords(true)
-                .first();
+                .<MServiceSchedule>list()
+                .stream()
+                .anyMatch(this::overlapsWith);
             MResource resource = (MResource) getS_Resource();
-            if (overlappingSchedule != null) {
+            if (hasOverlap) {
                 X_S_ServicePlan servicePlan = (X_S_ServicePlan) getS_ServicePlan();
                 String servicePlanDescription = servicePlan == null ? "" : servicePlan.getDescription();
                 String dayOfWeek = MRefList.getListName(getCtx(), DAY_OF_WEEK_REFERENCE, getDayOfWeek());
@@ -89,7 +126,6 @@ public static int DAY_OF_WEEK_REFERENCE = 167;
                 );
                 throw new AdempiereException(errorMessage);
             }
-            whereClause = "S_Resource_ID = ? AND S_ServiceSchedule_ID <> ?";
             BigDecimal totalHours = new Query(getCtx(), Table_Name, whereClause, get_TrxName())
                 .setParameters(getS_Resource_ID(), getS_ServiceSchedule_ID())
                 .setOnlyActiveRecords(true)
