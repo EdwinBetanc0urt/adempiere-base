@@ -5,13 +5,15 @@ import org.adempiere.core.domains.models.X_S_ServiceSchedule;
 import org.adempiere.exceptions.AdempiereException;
 import org.compiere.util.DisplayType;
 import org.compiere.util.Msg;
-import org.compiere.util.TimeUtil;
 import org.eevolution.hr.model.MHREmployee;
 import org.eevolution.hr.model.MHREmployeeType;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.ResultSet;
 import java.text.MessageFormat;
+import java.time.Duration;
+import java.time.LocalTime;
 import java.util.Properties;
 
 /**
@@ -27,6 +29,15 @@ public static int DAY_OF_WEEK_REFERENCE = 167;
         super(ctx, rs, trxName);
     }
 
+    private BigDecimal calculatePlannedHours() {
+        LocalTime from = getTimeFrom().toLocalDateTime().toLocalTime();
+        LocalTime to = getTimeTo().toLocalDateTime().toLocalTime();
+        long minutes = Duration.between(from, to).toMinutes();
+        if (minutes < 0) {
+            minutes += Duration.ofDays(1).toMinutes();
+        }
+        return BigDecimal.valueOf(minutes).divide(BigDecimal.valueOf(60), 10, RoundingMode.HALF_UP).stripTrailingZeros();
+    }
 
     /**
      * 	Before Save
@@ -39,7 +50,7 @@ public static int DAY_OF_WEEK_REFERENCE = 167;
         if (getS_ServicePlan_ID() <= 0) {
             throw new AdempiereException("@S_ServicePlan_ID@ @NotFound@");
         }
-        BigDecimal plannedHours = BigDecimal.valueOf(TimeUtil.getHoursBetween(getTimeFrom(), getTimeTo()));
+        BigDecimal plannedHours = calculatePlannedHours();
         setPlannedHours(plannedHours);
         if (getS_Resource_ID() > 0
                 && (newRecord || is_ValueChanged(COLUMNNAME_TimeFrom) || is_ValueChanged(COLUMNNAME_TimeTo) || is_ValueChanged(COLUMNNAME_S_Resource_ID))) {
