@@ -64,6 +64,11 @@ sourceSets {
             srcDirs 'service/src/main/scala'
         }
     }
+    test {
+        java {
+            srcDirs 'base/src/test/java'
+        }
+    }
 }
 
 dependencies {
@@ -209,6 +214,13 @@ dependencies {
     // GraalVM JavaScript engine (JSR-223, JDK 17+)
     api 'org.graalvm.js:js:23.0.0'
     api 'org.graalvm.js:js-scriptengine:23.0.0'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
 }
 
 def entityType = 'D'

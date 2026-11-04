@@ -442,6 +442,19 @@ public interface I_C_BankAccount
 	  */
 	public boolean isValidateCashOpening();
 
+    /** Column name IsValidateStatementOnReversal */
+    public static final String COLUMNNAME_IsValidateStatementOnReversal = "IsValidateStatementOnReversal";
+
+	/** Set Validate Statement On Reversal.
+	  * Validate the bank statement reference when reversing a payment on this bank account
+	  */
+	public void setIsValidateStatementOnReversal (boolean IsValidateStatementOnReversal);
+
+	/** Get Validate Statement On Reversal.
+	  * Validate the bank statement reference when reversing a payment on this bank account
+	  */
+	public boolean isValidateStatementOnReversal();
+
     /** Column name PaymentExportClass */
     public static final String COLUMNNAME_PaymentExportClass = "PaymentExportClass";
 

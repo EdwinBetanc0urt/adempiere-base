@@ -76,7 +76,7 @@ public class MProductCategoryAcct extends X_M_Product_Category_Acct
 							int M_Product_Category_ID, int C_AcctSchema_ID, int AD_Org_ID, String trxName)
 	{
 		
-		MAcctSchema as = new MAcctSchema(ctx, C_AcctSchema_ID, trxName);
+		MAcctSchema as = MAcctSchema.get(ctx, C_AcctSchema_ID);
 		
 		if(!MAcctSchema.COSTINGLEVEL_Organization.equals(as.getCostingLevel()))
 		{

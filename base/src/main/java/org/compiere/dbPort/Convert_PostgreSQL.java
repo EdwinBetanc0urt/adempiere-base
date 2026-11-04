@@ -399,7 +399,11 @@ public class Convert_PostgreSQL extends Convert_SQL92 {
 	 * <pre>
 	 *        SELECT Col1, "limit", Col2 FROM tableA "limit" 1
 	 *        =&gt; SELECT Col1, "limit", Col2 FROM tableA LIMIT 1
+	 *        SELECT Col1 FROM tableA "limit" ? OFFSET ?
+	 *        =&gt; SELECT Col1 FROM tableA LIMIT ? OFFSET ?
 	 * </pre>
+	 * A "limit" column is never followed by a number, a bind parameter or ALL,
+	 * so only the pagination clause is restored.
 	 * 
 	 * @param sqlStatement
 	 * @return converted statement
@@ -408,7 +412,9 @@ public class Convert_PostgreSQL extends Convert_SQL92 {
 		String scapeSQLStatement = sqlStatement;
 
 		//	"limit" 10   =>   LIMIT 10
-		final String limitPattern = "\"limit\"\\s+(\\d+)";
+		//	"limit" ?    =>   LIMIT ?
+		//	"limit" ALL  =>   LIMIT ALL
+		final String limitPattern = "\"limit\"\\s+(\\d+|\\?|ALL\\b)";
 		final String limitReplace = "LIMIT $1";
 
 		Matcher matcherSmallerThanWithAnd = Pattern.compile(
@@ -416,8 +422,8 @@ public class Convert_PostgreSQL extends Convert_SQL92 {
 			REGEX_FLAGS
 		).matcher(sqlStatement);
 		if(matcherSmallerThanWithAnd.find()) {
-			scapeSQLStatement = sqlStatement.replaceAll(
-				matcherSmallerThanWithAnd.pattern().pattern(),
+			// use the matcher to keep REGEX_FLAGS (case insensitive)
+			scapeSQLStatement = matcherSmallerThanWithAnd.replaceAll(
 				limitReplace
 			);
 		}
