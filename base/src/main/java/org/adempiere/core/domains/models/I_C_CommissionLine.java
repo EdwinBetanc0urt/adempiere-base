@@ -372,6 +372,39 @@ public interface I_C_CommissionLine
 	  */
 	public int getLine();
 
+    /** Column name M_Industry_Sector_ID */
+    public static final String COLUMNNAME_M_Industry_Sector_ID = "M_Industry_Sector_ID";
+
+	/** Set Industry Sector	  */
+	public void setM_Industry_Sector_ID (int M_Industry_Sector_ID);
+
+	/** Get Industry Sector	  */
+	public int getM_Industry_Sector_ID();
+
+	public org.adempiere.core.domains.models.I_M_Industry_Sector getM_Industry_Sector() throws RuntimeException;
+
+    /** Column name M_Material_Group_ID */
+    public static final String COLUMNNAME_M_Material_Group_ID = "M_Material_Group_ID";
+
+	/** Set Material Group	  */
+	public void setM_Material_Group_ID (int M_Material_Group_ID);
+
+	/** Get Material Group	  */
+	public int getM_Material_Group_ID();
+
+	public org.adempiere.core.domains.models.I_M_Material_Group getM_Material_Group() throws RuntimeException;
+
+    /** Column name M_Material_Type_ID */
+    public static final String COLUMNNAME_M_Material_Type_ID = "M_Material_Type_ID";
+
+	/** Set Material Type	  */
+	public void setM_Material_Type_ID (int M_Material_Type_ID);
+
+	/** Get Material Type	  */
+	public int getM_Material_Type_ID();
+
+	public org.adempiere.core.domains.models.I_M_Material_Type getM_Material_Type() throws RuntimeException;
+
     /** Column name M_Product_Category_ID */
     public static final String COLUMNNAME_M_Product_Category_ID = "M_Product_Category_ID";
 
@@ -446,6 +479,28 @@ public interface I_C_CommissionLine
 	public int getM_Product_ID();
 
 	public org.adempiere.core.domains.models.I_M_Product getM_Product() throws RuntimeException;
+
+    /** Column name M_Purchase_Group_ID */
+    public static final String COLUMNNAME_M_Purchase_Group_ID = "M_Purchase_Group_ID";
+
+	/** Set Purchase Group	  */
+	public void setM_Purchase_Group_ID (int M_Purchase_Group_ID);
+
+	/** Get Purchase Group	  */
+	public int getM_Purchase_Group_ID();
+
+	public org.adempiere.core.domains.models.I_M_Purchase_Group getM_Purchase_Group() throws RuntimeException;
+
+    /** Column name M_Sales_Group_ID */
+    public static final String COLUMNNAME_M_Sales_Group_ID = "M_Sales_Group_ID";
+
+	/** Set Sales Group	  */
+	public void setM_Sales_Group_ID (int M_Sales_Group_ID);
+
+	/** Get Sales Group	  */
+	public int getM_Sales_Group_ID();
+
+	public org.adempiere.core.domains.models.I_M_Sales_Group getM_Sales_Group() throws RuntimeException;
 
     /** Column name MaxCompliance */
     public static final String COLUMNNAME_MaxCompliance = "MaxCompliance";

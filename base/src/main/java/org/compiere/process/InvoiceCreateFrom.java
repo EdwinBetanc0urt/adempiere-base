@@ -25,6 +25,7 @@ import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /** Generated Process for (Invoice Create From)
@@ -66,6 +67,8 @@ public class InvoiceCreateFrom extends InvoiceCreateFromAbstract {
 		//	Remaining open amount per referenced invoice, so the sum of the allocated amounts
 		//	across all lines pointing to the same invoice never exceeds its open balance
 		final Map<Integer, BigDecimal> remainingOpenByReference = new HashMap<>();
+		//	Allocate line of each referenced invoice, so all lines from the same invoice add up on a single record
+		final Map<Integer, PO> allocateInvoiceByReference = new HashMap<>();
 		//	Loop
 		recordIds.forEach(key -> {
 			// variable values
@@ -149,8 +152,6 @@ public class InvoiceCreateFrom extends InvoiceCreateFromAbstract {
 				MTable allocateInvoiceTable = MTable.get(getCtx(), "C_AllocateInvoice");
 				if (allocateInvoiceTable != null && allocateInvoiceTable.getAD_Table_ID() > 0) {
 					int referenceInvoiceId = fromLine.getC_Invoice_ID();
-					//	Whether an allocate line was already created for this referenced invoice in this run
-					boolean referenceAlreadyLinked = remainingOpenByReference.containsKey(referenceInvoiceId);
 					//	Open balance of the referenced invoice, fetched once and decremented per line
 					BigDecimal remainingOpenAmt = remainingOpenByReference.get(referenceInvoiceId);
 					if (remainingOpenAmt == null) {
@@ -165,14 +166,34 @@ public class InvoiceCreateFrom extends InvoiceCreateFromAbstract {
 							: Env.ZERO;
 					remainingOpenByReference.put(referenceInvoiceId, remainingOpenAmt.subtract(allocateAmount));
 
-					//	Skip additional zero-amount allocate lines once the referenced invoice is already linked
-					if (allocateAmount.signum() != 0 || !referenceAlreadyLinked) {
-						PO allocateInvoice = allocateInvoiceTable.getPO(0, invoiceLine.get_TrxName());
+					//	A single allocate line per referenced invoice: reuse the one already linked to this invoice, if any
+					PO allocateInvoice = allocateInvoiceByReference.get(referenceInvoiceId);
+					if (allocateInvoice == null) {
+						allocateInvoice = new Query(
+							getCtx(),
+							allocateInvoiceTable.getTableName(),
+							"C_Invoice_ID = ? AND ReferenceDocument_ID = ?",
+							get_TrxName()
+						)
+							.setParameters(getRecord_ID(), referenceInvoiceId)
+							.first()
+						;
+					}
+					if (allocateInvoice == null) {
+						allocateInvoice = allocateInvoiceTable.getPO(0, invoiceLine.get_TrxName());
 						allocateInvoice.set_ValueOfColumn("C_Invoice_ID", getRecord_ID());
 						allocateInvoice.set_ValueOfColumn("ReferenceDocument_ID", referenceInvoiceId);
 						allocateInvoice.set_ValueOfColumn("AllocateAmount", allocateAmount);
 						allocateInvoice.saveEx();
+					} else if (allocateAmount.signum() != 0) {
+						//	Accumulate the line total (tax included) on the existing allocate line
+						BigDecimal currentAmount = Optional.ofNullable((BigDecimal) allocateInvoice.get_Value("AllocateAmount"))
+							.orElse(Env.ZERO)
+						;
+						allocateInvoice.set_ValueOfColumn("AllocateAmount", currentAmount.add(allocateAmount));
+						allocateInvoice.saveEx();
 					}
+					allocateInvoiceByReference.put(referenceInvoiceId, allocateInvoice);
 				}
 				// MZ Goodwill
 				// copy the landed cost

@@ -719,13 +719,37 @@ public class X_C_BankAccount extends PO implements I_C_BankAccount, I_Persistent
 	/** Get Validate Cash Opening.
 		@return Validate Cash Opening for this bank account
 	  */
-	public boolean isValidateCashOpening () 
+	public boolean isValidateCashOpening ()
 	{
 		Object oo = get_Value(COLUMNNAME_IsValidateCashOpening);
-		if (oo != null) 
+		if (oo != null)
 		{
-			 if (oo instanceof Boolean) 
-				 return ((Boolean)oo).booleanValue(); 
+			 if (oo instanceof Boolean)
+				 return ((Boolean)oo).booleanValue();
+			return "Y".equals(oo);
+		}
+		return false;
+	}
+
+	/** Set Validate Statement On Reversal.
+		@param IsValidateStatementOnReversal
+		Validate the bank statement reference when reversing a payment on this bank account
+	  */
+	public void setIsValidateStatementOnReversal (boolean IsValidateStatementOnReversal)
+	{
+		set_Value (COLUMNNAME_IsValidateStatementOnReversal, Boolean.valueOf(IsValidateStatementOnReversal));
+	}
+
+	/** Get Validate Statement On Reversal.
+		@return Validate the bank statement reference when reversing a payment on this bank account
+	  */
+	public boolean isValidateStatementOnReversal ()
+	{
+		Object oo = get_Value(COLUMNNAME_IsValidateStatementOnReversal);
+		if (oo != null)
+		{
+			 if (oo instanceof Boolean)
+				 return ((Boolean)oo).booleanValue();
 			return "Y".equals(oo);
 		}
 		return false;

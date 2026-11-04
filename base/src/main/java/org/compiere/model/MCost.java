@@ -77,7 +77,7 @@ public class MCost extends X_M_Cost
 
 		public static MCost getDimension(MProduct product , int C_AcctSchema_ID , int  AD_Org_ID , int  M_Warehouse_ID , int M_AttributeSetInstance_ID, int M_CostType_ID , int M_CostElement_ID)
 		{
-			MAcctSchema acctSchema = new  MAcctSchema(product.getCtx(), C_AcctSchema_ID , product.get_TrxName());
+			MAcctSchema acctSchema = MAcctSchema.get(product.getCtx(), C_AcctSchema_ID);
 
 			ArrayList<Object> parameters = new ArrayList<Object>();
 			StringBuilder whereClause = new StringBuilder();
@@ -102,7 +102,7 @@ public class MCost extends X_M_Cost
 								+ acctSchema.getCostingMethod());
 
 			String CostingLevel = product.getCostingLevel(acctSchema, AD_Org_ID);
-			MCostType costType =  new MCostType(product.getCtx() , M_CostType_ID , product.get_TrxName());
+			MCostType costType = MCostType.get(product.getCtx(), M_CostType_ID);
 			String costingMethod = costType.getCostingMethod();
 
 			if (MAcctSchema.COSTINGLEVEL_Client.equals(CostingLevel)) {
@@ -164,6 +164,37 @@ public class MCost extends X_M_Cost
 			.first();
 		}
 		
+		private static MCost findDimension(MProduct product, String trxName, int C_AcctSchema_ID, int AD_Org_ID, int M_Warehouse_ID,
+				int M_AttributeSetInstance_ID, int M_CostType_ID, int M_CostElement_ID) {
+			ArrayList<Object> parameters = new ArrayList<Object>();
+			StringBuilder whereClause = new StringBuilder();
+			whereClause.append(I_M_Cost.COLUMNNAME_C_AcctSchema_ID).append("=? AND ");
+			whereClause.append(I_M_Cost.COLUMNNAME_M_Product_ID).append("=? AND ");
+			whereClause.append(I_M_Cost.COLUMNNAME_M_CostType_ID).append("=? AND ");
+			whereClause.append(I_M_Cost.COLUMNNAME_M_CostElement_ID).append("=? ");
+			parameters.add(C_AcctSchema_ID);
+			parameters.add(product.getM_Product_ID());
+			parameters.add(M_CostType_ID);
+			parameters.add(M_CostElement_ID);
+			if (AD_Org_ID > 0) {
+				whereClause.append(" AND ").append(I_M_Cost.COLUMNNAME_AD_Org_ID).append("=? ");
+				parameters.add(AD_Org_ID);
+			}
+			if (M_Warehouse_ID > 0) {
+				whereClause.append(" AND ").append(I_M_Cost.COLUMNNAME_M_Warehouse_ID).append("=? ");
+				parameters.add(M_Warehouse_ID);
+			}
+			if (M_AttributeSetInstance_ID > 0) {
+				whereClause.append(" AND ").append(I_M_Cost.COLUMNNAME_M_AttributeSetInstance_ID).append("=? ");
+				parameters.add(M_AttributeSetInstance_ID);
+			}
+			return new Query(product.getCtx(), I_M_Cost.Table_Name, whereClause.toString(), trxName)
+					.setClient_ID()
+					.setOnlyActiveRecords(true)
+					.setParameters(parameters)
+					.first();
+		}
+
 		public static MCost validateCostForCostType(MAcctSchema as, MCostType ct,
 				MCostElement ce, int M_Product_ID, int AD_Org_ID, int M_Warehouse_ID,
 				int M_AttributeSetInstance_ID, String trxName) {
@@ -177,8 +208,10 @@ public class MCost extends X_M_Cost
 						"Error do not exist material cost element for method cost "
 								+ as.getCostingMethod());
 
-			MProduct product = new MProduct(ct.getCtx(), M_Product_ID,trxName);
-			
+			MProduct product = MProduct.get(ct.getCtx(), M_Product_ID);
+			if (product == null)
+				throw new AdempiereException("@M_Product_ID@ @NotFound@");
+
 			String CostingLevel = product.getCostingLevel(as, AD_Org_ID);
 			String costingMethod = ct.getCostingMethod();
 
@@ -218,8 +251,14 @@ public class MCost extends X_M_Cost
 			}		
 			
 			// Get or Create MCost
-			return MCost.getOrCreate(product, M_AttributeSetInstance_ID, as,
-					AD_Org_ID, M_Warehouse_ID, ct.getM_CostType_ID(), ce.getM_CostElement_ID());
+			MCost cost = findDimension(product, trxName, as.getC_AcctSchema_ID(), AD_Org_ID, M_Warehouse_ID,
+					M_AttributeSetInstance_ID, ct.getM_CostType_ID(), ce.getM_CostElement_ID());
+			if (cost == null) {
+				cost = new MCost(product, M_AttributeSetInstance_ID, as.getC_AcctSchema_ID(), AD_Org_ID,
+						M_Warehouse_ID, ct.getM_CostType_ID(), ce.getM_CostElement_ID(), trxName);
+				cost.saveEx();
+			}
+			return cost;
 		}
 
     	/**

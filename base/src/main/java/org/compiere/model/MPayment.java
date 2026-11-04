@@ -228,6 +228,18 @@ public final class MPayment extends X_C_Payment
 	}
 
 	/**
+	 * Whether the payment's bank account is configured to validate the
+	 * reconciliation reference (an open bank statement line) when reversing.
+	 * @return true if the reversal must be blocked while referenced by an open statement
+	 */
+	private boolean mustValidateStatementOnReversal() {
+		if (getC_BankAccount_ID() <= 0)
+			return true;
+		MBankAccount bankAccount = MBankAccount.get(getCtx(), getC_BankAccount_ID());
+		return bankAccount == null || bankAccount.isValidateStatementOnReversal();
+	}
+
+	/**
 	 *  Load Constructor
 	 *  @param ctx context
 	 *  @param rs result set record
@@ -2285,7 +2297,7 @@ public final class MPayment extends X_C_Payment
 	public MPayment reverseIt(boolean isAccrual)
 	{
 		MBankStatementLine openBankStatementLine = getOpenBankStatementLine();
-		if (openBankStatementLine != null) {
+		if (openBankStatementLine != null && mustValidateStatementOnReversal()) {
 			processMsg = Msg.getMsg(getCtx(), "Payment.ExistBankStatement",
 					new Object[] { openBankStatementLine.getParent().getDocumentNo(), openBankStatementLine.getLine() });
 			return null;
@@ -2301,6 +2313,11 @@ public final class MPayment extends X_C_Payment
 
 		//	Auto Reconcile if not on Bank Statement
 		boolean reconciled = getC_BankStatementLine_ID() > 0; //AZ Goodwill
+		//	When the validation is disabled and the payment is still referenced by an
+		//	open (draft) bank statement line, keep the reversal unreconciled so it can
+		//	be matched to another bank statement instead of being auto-reconciled.
+		if (!reconciled && openBankStatementLine != null)
+			reconciled = true;
 
 		//	Create Reversal
 		MPayment reversal = new MPayment (getCtx(), 0, get_TrxName());

@@ -2245,28 +2245,35 @@ public class MInvoice extends X_C_Invoice implements DocAction , DocumentReversa
 			int invoiceToAllocateId = get_ValueAsInt("ReferenceDocument_ID");
 			MTable allocateInvoiceTable = MTable.get(getCtx(), "C_AllocateInvoice");
 			String whereClause = "C_Invoice_ID = ?";
-			//	Explicit amount from the single C_AllocateInvoice line, if that is how invoiceToAllocateId was resolved
+			//	Explicit amount from the C_AllocateInvoice lines, if that is how invoiceToAllocateId was resolved
 			BigDecimal explicitPlacedAmount = null;
 			if (invoiceToAllocateId <= 0) {
 				if (allocateInvoiceTable != null && allocateInvoiceTable.get_ID() > 0) {
 					String getAllocateInvoicesCountSql = "SELECT COUNT(DISTINCT(ReferenceDocument_ID)) FROM C_AllocateInvoice WHERE C_Invoice_ID = ?";
 					int allocateInvoicesCount = DB.getSQLValue(get_TrxName(), getAllocateInvoicesCountSql, get_ID());
 					if (allocateInvoicesCount == 1) {
-						int allocateInvoiceId = new Query(getCtx(), allocateInvoiceTable.getTableName(),whereClause, get_TrxName())
+						//	Several lines may point to the same referenced document (e.g. one per line from Create From):
+						//	the explicit amount is the sum of all of them, not only the first one
+						List<Integer> allocateInvoiceIds = new Query(getCtx(), allocateInvoiceTable.getTableName(),whereClause, get_TrxName())
 								.setParameters(get_ID())
-								.firstId();
-						PO AllocateInvoice = allocateInvoiceTable.getPO(allocateInvoiceId,get_TrxName());
-						invoiceToAllocateId = AllocateInvoice.get_ValueAsInt("ReferenceDocument_ID");
-						set_ValueOfColumn("ReferenceDocument_ID", invoiceToAllocateId);
-						explicitPlacedAmount = Optional.ofNullable((BigDecimal) AllocateInvoice.get_Value("AllocateAmount"))
-							.orElse(Env.ZERO);
-						if (explicitPlacedAmount.signum()==0) {
-							//	A reference-only line with zero amount only records the link and must not allocate:
-							//	route it through the general branch below, which skips it. Any other zero amount is an error
-							if (!AllocateInvoice.get_ValueAsBoolean("IsReferenceOnly")) {
+								.getIDsAsList();
+						explicitPlacedAmount = Env.ZERO;
+						for (Integer allocateInvoiceId : allocateInvoiceIds) {
+							PO allocateInvoice = allocateInvoiceTable.getPO(allocateInvoiceId, get_TrxName());
+							invoiceToAllocateId = allocateInvoice.get_ValueAsInt("ReferenceDocument_ID");
+							BigDecimal allocateAmount = Optional.ofNullable((BigDecimal) allocateInvoice.get_Value("AllocateAmount"))
+								.orElse(Env.ZERO);
+							//	A reference-only line with zero amount only records the link and must not allocate.
+							//	Any other zero amount is an error
+							if (allocateAmount.signum() == 0 && !allocateInvoice.get_ValueAsBoolean("IsReferenceOnly")) {
 								throw new AdempiereException(Msg.getMsg(getCtx(), "AllocateAmountZero",
 										new Object[] { MInvoice.get(getCtx(), invoiceToAllocateId).getDocumentNo() }));
 							}
+							explicitPlacedAmount = explicitPlacedAmount.add(allocateAmount);
+						}
+						set_ValueOfColumn("ReferenceDocument_ID", invoiceToAllocateId);
+						if (explicitPlacedAmount.signum() == 0) {
+							//	Only reference-only lines: route them through the general branch below, which skips them
 							invoiceToAllocateId = 0;
 							explicitPlacedAmount = null;
 						}

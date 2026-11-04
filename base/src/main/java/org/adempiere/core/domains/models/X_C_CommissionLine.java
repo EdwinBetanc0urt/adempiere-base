@@ -601,6 +601,75 @@ public class X_C_CommissionLine extends PO implements I_C_CommissionLine, I_Pers
 		return ii.intValue();
 	}
 
+	public org.adempiere.core.domains.models.I_M_Industry_Sector getM_Industry_Sector() throws RuntimeException
+    {
+		return (org.adempiere.core.domains.models.I_M_Industry_Sector)MTable.get(getCtx(), org.adempiere.core.domains.models.I_M_Industry_Sector.Table_Name)
+			.getPO(getM_Industry_Sector_ID(), get_TrxName());	}
+
+	/** Set Industry Sector	  */
+	public void setM_Industry_Sector_ID (int M_Industry_Sector_ID)
+	{
+		if (M_Industry_Sector_ID < 1)
+			set_Value (COLUMNNAME_M_Industry_Sector_ID, null);
+		else
+			set_Value (COLUMNNAME_M_Industry_Sector_ID, Integer.valueOf(M_Industry_Sector_ID));
+	}
+
+	/** Get Industry Sector	  */
+	public int getM_Industry_Sector_ID ()
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_M_Industry_Sector_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
+	public org.adempiere.core.domains.models.I_M_Material_Group getM_Material_Group() throws RuntimeException
+    {
+		return (org.adempiere.core.domains.models.I_M_Material_Group)MTable.get(getCtx(), org.adempiere.core.domains.models.I_M_Material_Group.Table_Name)
+			.getPO(getM_Material_Group_ID(), get_TrxName());	}
+
+	/** Set Material Group	  */
+	public void setM_Material_Group_ID (int M_Material_Group_ID)
+	{
+		if (M_Material_Group_ID < 1)
+			set_Value (COLUMNNAME_M_Material_Group_ID, null);
+		else
+			set_Value (COLUMNNAME_M_Material_Group_ID, Integer.valueOf(M_Material_Group_ID));
+	}
+
+	/** Get Material Group	  */
+	public int getM_Material_Group_ID ()
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_M_Material_Group_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
+	public org.adempiere.core.domains.models.I_M_Material_Type getM_Material_Type() throws RuntimeException
+    {
+		return (org.adempiere.core.domains.models.I_M_Material_Type)MTable.get(getCtx(), org.adempiere.core.domains.models.I_M_Material_Type.Table_Name)
+			.getPO(getM_Material_Type_ID(), get_TrxName());	}
+
+	/** Set Material Type	  */
+	public void setM_Material_Type_ID (int M_Material_Type_ID)
+	{
+		if (M_Material_Type_ID < 1)
+			set_Value (COLUMNNAME_M_Material_Type_ID, null);
+		else
+			set_Value (COLUMNNAME_M_Material_Type_ID, Integer.valueOf(M_Material_Type_ID));
+	}
+
+	/** Get Material Type	  */
+	public int getM_Material_Type_ID ()
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_M_Material_Type_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
 	public org.adempiere.core.domains.models.I_M_Product_Category getM_Product_Category() throws RuntimeException
     {
 		return (org.adempiere.core.domains.models.I_M_Product_Category)MTable.get(getCtx(), org.adempiere.core.domains.models.I_M_Product_Category.Table_Name)
@@ -733,7 +802,7 @@ public class X_C_CommissionLine extends PO implements I_C_CommissionLine, I_Pers
 	/** Get Product.
 		@return Product, Service, Item
 	  */
-	public int getM_Product_ID () 
+	public int getM_Product_ID ()
 	{
 		Integer ii = (Integer)get_Value(COLUMNNAME_M_Product_ID);
 		if (ii == null)
@@ -741,8 +810,54 @@ public class X_C_CommissionLine extends PO implements I_C_CommissionLine, I_Pers
 		return ii.intValue();
 	}
 
+	public org.adempiere.core.domains.models.I_M_Purchase_Group getM_Purchase_Group() throws RuntimeException
+    {
+		return (org.adempiere.core.domains.models.I_M_Purchase_Group)MTable.get(getCtx(), org.adempiere.core.domains.models.I_M_Purchase_Group.Table_Name)
+			.getPO(getM_Purchase_Group_ID(), get_TrxName());	}
+
+	/** Set Purchase Group	  */
+	public void setM_Purchase_Group_ID (int M_Purchase_Group_ID)
+	{
+		if (M_Purchase_Group_ID < 1)
+			set_Value (COLUMNNAME_M_Purchase_Group_ID, null);
+		else
+			set_Value (COLUMNNAME_M_Purchase_Group_ID, Integer.valueOf(M_Purchase_Group_ID));
+	}
+
+	/** Get Purchase Group	  */
+	public int getM_Purchase_Group_ID ()
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_M_Purchase_Group_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
+	public org.adempiere.core.domains.models.I_M_Sales_Group getM_Sales_Group() throws RuntimeException
+    {
+		return (org.adempiere.core.domains.models.I_M_Sales_Group)MTable.get(getCtx(), org.adempiere.core.domains.models.I_M_Sales_Group.Table_Name)
+			.getPO(getM_Sales_Group_ID(), get_TrxName());	}
+
+	/** Set Sales Group	  */
+	public void setM_Sales_Group_ID (int M_Sales_Group_ID)
+	{
+		if (M_Sales_Group_ID < 1)
+			set_Value (COLUMNNAME_M_Sales_Group_ID, null);
+		else
+			set_Value (COLUMNNAME_M_Sales_Group_ID, Integer.valueOf(M_Sales_Group_ID));
+	}
+
+	/** Get Sales Group	  */
+	public int getM_Sales_Group_ID ()
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_M_Sales_Group_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
 	/** Set Maximum Compliance (%).
-		@param MaxCompliance 
+		@param MaxCompliance
 		Maximum Compliance of Forecast
 	  */
 	public void setMaxCompliance (BigDecimal MaxCompliance)

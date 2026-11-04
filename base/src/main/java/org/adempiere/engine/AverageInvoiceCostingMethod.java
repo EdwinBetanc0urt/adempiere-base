@@ -25,6 +25,7 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod
 		implements ICostingMethod {
 
 	private boolean isReceiptLandedCost = false;
+	private static final BigDecimal RESIDUAL_TOLERANCE = new BigDecimal("0.01");
 
 	/**
 	 * In a vendor receipt, a Landed Cost element contributes no amount of its own: the amount
@@ -138,7 +139,7 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod
 					whereClause.append(" AND M_InOutline_ID=?");
 					MCostDetail receiptCostDetail = MCostDetail.get(model.getCtx(),whereClause.toString(),
 							((MMatchInv) model).getM_InOutLine_ID(),
-							model.getM_AttributeSetInstance_ID(), dimension.getC_AcctSchema_ID(), model.get_TrxName());
+							getReceiptAttributeSetInstanceId(), dimension.getC_AcctSchema_ID(), model.get_TrxName());
 					if (receiptCostDetail!=null) {
 						provisionOfPurchaseCost = receiptCostDetail.getCostAmt().divide(receiptCostDetail.getQty()).multiply(model.getMovementQty());//receiptCostDetail.getCostAmt();
 						provisionOfPurchaseCostLL =  receiptCostDetail.getCostAmtLL().divide(receiptCostDetail.getQty()).multiply(model.getMovementQty());
@@ -164,6 +165,7 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod
 			
 			accumulatedAmount = getNewAccumulatedAmount(lastCostDetail);
 			accumulatedAmount = accumulatedAmount.add(adjustCost);//accumulatedAmount = accumulatedQuantity.signum() > 0 ? accumulatedAmount.add(adjustCost) : accumulatedAmount.add(adjustCost.negate());
+			alignAmountWithQuantity();
 			
 			accumulatedAmountLowerLevel = getNewAccumulatedAmountLowerLevel(lastCostDetail);
 			accumulatedAmountLowerLevel =  accumulatedQuantity.signum() > 0 ? accumulatedAmountLowerLevel.add(adjustCostLowerLevel) : 
@@ -243,7 +245,7 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod
 					whereClause.append(" AND Qty <> 0");
 					MCostDetail receiptCostDetail = MCostDetail.get(model.getCtx(),whereClause.toString(),
 							((MMatchInv) model).getM_InOutLine_ID(),
-							model.getM_AttributeSetInstance_ID(), dimension.getC_AcctSchema_ID(), model.get_TrxName());
+							getReceiptAttributeSetInstanceId(), dimension.getC_AcctSchema_ID(), model.get_TrxName());
 					if (receiptCostDetail != null && Optional.ofNullable(model.getMovementQty()).orElse(Env.ZERO).compareTo(Env.ZERO) > 0) {
 						provisionOfPurchaseCost = receiptCostDetail.getCostAmt().divide(receiptCostDetail.getQty()).multiply(model.getMovementQty());//receiptCostDetail.getCostAmt();
 						provisionOfPurchaseCostLL =  receiptCostDetail.getCostAmtLL().divide(receiptCostDetail.getQty()).multiply(model.getMovementQty());
@@ -260,6 +262,7 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod
 				
 				accumulatedAmount = getNewAccumulatedAmount(lastCostDetail);
 				accumulatedAmount = accumulatedAmount.add(adjustCost);//accumulatedQuantity.signum() > 0 ? accumulatedAmount.add(adjustCost) : accumulatedAmount.add(adjustCost.negate());
+				alignAmountWithQuantity();
 				
 				accumulatedAmountLowerLevel = getNewAccumulatedAmountLowerLevel(lastCostDetail);
 				accumulatedAmountLowerLevel =  accumulatedQuantity.signum() > 0 ? accumulatedAmountLowerLevel.add(adjustCostLowerLevel) : 
@@ -293,12 +296,27 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod
             amountLowerLevel = movementQuantity.multiply(costLowLevel);
 
             accumulatedAmount = getNewAccumulatedAmount(lastCostDetail);
-			accumulatedAmount = accumulatedQuantity.signum() > 0 ? accumulatedAmount.add(amount) : accumulatedAmount.add(amount.negate());
+			accumulatedAmount = accumulatedAmount.add(amount).add(costThisLevel.signum() > 0 ? adjustCost : Env.ZERO);
 			
 			accumulatedAmountLowerLevel = getNewAccumulatedAmountLowerLevel(lastCostDetail);
 			accumulatedAmountLowerLevel = accumulatedQuantity.signum() > 0 ? accumulatedAmountLowerLevel.add(amountLowerLevel) : accumulatedAmountLowerLevel.add(amountLowerLevel.negate());
 			if (model instanceof MMovementLine && costDetail!=null){
 				costDetail.setAmt(amount);
+			}
+			if (!isReceiptLandedCost && costThisLevel.signum() > 0 && movementQuantity.signum() > 0)
+			{
+				BigDecimal chainAmount = getNewAccumulatedAmount(lastCostDetail).add(amount).add(adjustCost);
+				boolean significant = chainAmount.abs().compareTo(RESIDUAL_TOLERANCE) > 0;
+				boolean valueWithoutStock = accumulatedQuantity.signum() == 0 && significant;
+				boolean oppositeSigns = accumulatedQuantity.signum() * chainAmount.signum() < 0 && significant;
+				BigDecimal alignedAmount = accumulatedQuantity.multiply(costThisLevel);
+				BigDecimal difference = alignedAmount.subtract(chainAmount);
+				boolean negativeStockCovered = quantityOnHand.signum() < 0 && difference.abs().compareTo(RESIDUAL_TOLERANCE) > 0;
+				if (negativeStockCovered || valueWithoutStock || oppositeSigns)
+				{
+					adjustCost = adjustCost.add(difference);
+					accumulatedAmount = alignedAmount;
+				}
 			}
 		}
 		else if (transaction.getMovementType().endsWith("-")) {
@@ -314,7 +332,7 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod
                     movementQuantity);
 			
 			accumulatedAmount = getNewAccumulatedAmount(lastCostDetail);
-			accumulatedAmount = accumulatedQuantity.signum() > 0 ? accumulatedAmount.add(amount) : accumulatedAmount.add(amount.negate());
+			accumulatedAmount = accumulatedAmount.add(amount);
 			
 			accumulatedAmountLowerLevel = getNewAccumulatedAmountLowerLevel(lastCostDetail);
 			accumulatedAmountLowerLevel = accumulatedQuantity.signum() > 0 ? accumulatedAmountLowerLevel.add(amountLowerLevel) : accumulatedAmountLowerLevel.add(amountLowerLevel.negate());
@@ -411,6 +429,7 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod
 	public MCostDetail process() {		
 		calculate();
 		createCostDetail();
+		alignReversalWithStock();
 		updateInventoryValue();
 		createCostAdjustment();
 		return costDetail;
@@ -571,8 +590,8 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod
 			costDetail.setCostAmtLL(costDetail.getAmtLL().subtract(costDetail.getCostAdjustmentLL()));
 		}	
 		else if (movementQuantity.signum() < 0 ) {
-			costDetail.setCostAmt(costDetail.getAmt().add(adjustCost));
-			costDetail.setCostAmtLL(costDetail.getAmtLL().add(adjustCostLowerLevel));
+			costDetail.setCostAmt(costDetail.getAmt().add(adjustCost).subtract(adjustCost.signum() == 0 ? costDetail.getCostAdjustment() : Env.ZERO));
+			costDetail.setCostAmtLL(costDetail.getAmtLL().add(adjustCostLowerLevel).subtract(adjustCostLowerLevel.signum() == 0 ? costDetail.getCostAdjustmentLL() : Env.ZERO));
 		}
 
         costDetail.setCumulatedQty(getNewAccumulatedQuantity(lastCostDetail));
@@ -704,6 +723,47 @@ public class AverageInvoiceCostingMethod extends AbstractCostingMethod
             CostEngineFactory.getCostEngine(clientId).createCostDetail(
                     accountSchema, costType, costElement, transaction, transaction.getDocumentLine(), true);
 	}	
+
+	private void alignReversalWithStock() {
+		if (costDetail == null || !costDetail.isReversal() || costDetail.getM_Transaction_ID() != transaction.getM_Transaction_ID())
+			return;
+		BigDecimal multiplier = getMultiplierTrx(costDetail);
+		if (multiplier.signum() == 0)
+			return;
+		BigDecimal quantityAfter = getNewAccumulatedQuantity(costDetail);
+		BigDecimal amountAfter = getNewAccumulatedAmount(costDetail);
+		boolean significant = amountAfter.abs().compareTo(RESIDUAL_TOLERANCE) > 0;
+		boolean valueWithoutStock = quantityAfter.signum() == 0 && significant;
+		boolean oppositeSigns = quantityAfter.signum() * amountAfter.signum() < 0 && significant;
+		if (!valueWithoutStock && !oppositeSigns)
+			return;
+		BigDecimal alignedAmount = quantityAfter.multiply(costDetail.getCurrentCostPrice().abs());
+		BigDecimal adjustment = alignedAmount.subtract(amountAfter).multiply(multiplier);
+		costDetail.setCostAdjustment(costDetail.getCostAdjustment().add(adjustment));
+		costDetail.setAmt(costDetail.getAmt().add(adjustment));
+		costDetail.saveEx();
+		accumulatedQuantity = quantityAfter;
+		accumulatedAmount = alignedAmount;
+	}
+
+	private void alignAmountWithQuantity() {
+		boolean significant = accumulatedAmount.abs().compareTo(RESIDUAL_TOLERANCE) > 0;
+		boolean valueWithoutStock = accumulatedQuantity.signum() == 0 && significant;
+		boolean oppositeSigns = accumulatedQuantity.signum() * accumulatedAmount.signum() < 0 && significant;
+		if (valueWithoutStock || oppositeSigns)
+		{
+			BigDecimal alignedAmount = accumulatedQuantity.multiply(costThisLevel);
+			adjustCost = adjustCost.add(alignedAmount.subtract(accumulatedAmount));
+			accumulatedAmount = alignedAmount;
+		}
+	}
+
+	private int getReceiptAttributeSetInstanceId() {
+		int attributeSetInstanceId = model.getM_AttributeSetInstance_ID();
+		if (attributeSetInstanceId == 0 && model instanceof MMatchInv)
+			attributeSetInstanceId = ((MMatchInv) model).getM_InOutLine().getM_AttributeSetInstance_ID();
+		return attributeSetInstanceId;
+	}
 
 	protected BigDecimal roundCost(BigDecimal price, int accountSchemaId) {
 		// Fix Cost Precision

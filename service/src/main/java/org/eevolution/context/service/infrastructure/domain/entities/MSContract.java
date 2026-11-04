@@ -501,7 +501,7 @@ public class MSContract extends X_S_Contract implements DocAction, DocOptions {
 			int AD_Table_ID, String[] docAction, String[] options, int index) {
 		//	Valid Document Action
 		int seqIndex = index;
-		if (AD_Table_ID == I_S_ContractLine.Table_ID) {
+		if (AD_Table_ID == Table_ID) {
 			if (docStatus.equals(DocAction.STATUS_Drafted)
 					|| docStatus.equals(DocAction.STATUS_InProgress)
 					|| docStatus.equals(DocAction.STATUS_Invalid)) {
