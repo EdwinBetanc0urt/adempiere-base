@@ -9,6 +9,7 @@ import org.compiere.model.MMigrationData;
 import org.compiere.model.MMigrationStep;
 import org.compiere.util.CLogger;
 import org.compiere.util.Env;
+import org.compiere.util.Trx;
 import org.spin.util.XMLUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -24,10 +25,10 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
 import java.io.FileWriter;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -91,7 +92,8 @@ public class XMLMigration implements IMigrationManagement {
 		if(files == null || files.isEmpty()) {
 			return List.of();
 		}
-		Map<String, Integer> migrationsToApply = new HashMap<>();
+		//	Files are loaded in parallel: the map must be thread safe or entries are lost
+		Map<String, Integer> migrationsToApply = new ConcurrentHashMap<>();
 		files.parallelStream().forEach(file ->{
 			try {
 				int migrationId = loadFile(file, finder);
@@ -99,7 +101,7 @@ public class XMLMigration implements IMigrationManagement {
 					migrationsToApply.put(file.getAbsolutePath(), migrationId);
 				}
 			} catch (Exception e) {
-				log.log(Level.SEVERE, e.getLocalizedMessage());
+				log.log(Level.SEVERE, "Error loading " + file + ": " + e.getLocalizedMessage(), e);
 			}
 		});
 		return migrationsToApply.keySet().stream()
@@ -121,12 +123,18 @@ public class XMLMigration implements IMigrationManagement {
 				Element element = (Element) migrations.item(0);
 				Properties ctx = Env.getCtx();
 				try {
-					MMigration migration = saveMigrationFromXmlNode(ctx, element, finder);
-					if(migration != null) {
-						migrationReferenceId.set(migration.getAD_Migration_ID());
-					}
+					//	The migration, its steps and their data are saved in one transaction: when any of them
+					//	fails nothing is registered, instead of leaving a migration with only its first steps
+					//	(it would be skipped by the next run because it is already registered)
+					Trx.run(transactionName -> {
+						MMigration migration = saveMigrationFromXmlNode(ctx, element, finder, transactionName);
+						if(migration != null) {
+							migrationReferenceId.set(migration.getAD_Migration_ID());
+						}
+					});
 				} catch (Exception e) {
-					log.log(Level.SEVERE, e.getLocalizedMessage());
+					migrationReferenceId.set(-1);
+					log.log(Level.SEVERE, "Migration not imported from " + file + ": " + e.getLocalizedMessage(), e);
 				}
 			}
 		} catch (Exception e) {
@@ -135,7 +143,7 @@ public class XMLMigration implements IMigrationManagement {
 		return migrationReferenceId.get();
 	}
 
-	private MMigration saveMigrationFromXmlNode(Properties ctx, Element element, MigrationFinder finder) {
+	private MMigration saveMigrationFromXmlNode(Properties ctx, Element element, MigrationFinder finder, String transactionName) {
 		if ( !"Migration".equals(element.getLocalName() ) ) {
 			return null;
 		}
@@ -146,7 +154,7 @@ public class XMLMigration implements IMigrationManagement {
 		if(finder.existsMigration(entityType, releaseNo, name, Integer.parseInt(seqNo))) {
 			return null;
 		}
-		MMigration migration = new MMigration(ctx, 0, null);
+		MMigration migration = new MMigration(ctx, 0, transactionName);
 		migration.setName(name);
 		migration.setSeqNo(Integer.parseInt(seqNo));
 		migration.setEntityType(entityType);
@@ -159,28 +167,29 @@ public class XMLMigration implements IMigrationManagement {
 		NodeList children = element.getElementsByTagName("Step");
 		Stream<Node> nodeStream = IntStream.range(0, children.getLength())
 				.mapToObj(children::item);
+		//	A step that fails aborts the whole migration (the transaction is rolled back)
 		nodeStream.forEach(elementValue -> {
-			try {
-				Element step = (Element) elementValue;
-				if ( "Step".equals(step.getTagName())) {
-					saveStepFromXmlNode(ctx, migration.getAD_Migration_ID(), step);
+			Element step = (Element) elementValue;
+			if ( "Step".equals(step.getTagName())) {
+				try {
+					saveStepFromXmlNode(ctx, migration.getAD_Migration_ID(), step, transactionName);
+				} catch (Exception e) {
+					throw new AdempiereException(migration + ": Step " + step.getAttribute("SeqNo") + " not imported: " + e.getLocalizedMessage(), e);
 				}
-			} catch (Exception e) {
-				log.log(Level.SEVERE, e.getLocalizedMessage());
 			}
 		});
 		return migration;
 	}
 
-	private void saveStepFromXmlNode(Properties ctx, int migrationId, Node stepNode) {
-		MMigrationStep migrationStep = new MMigrationStep(ctx, 0, null);
+	private void saveStepFromXmlNode(Properties ctx, int migrationId, Node stepNode, String transactionName) {
+		MMigrationStep migrationStep = new MMigrationStep(ctx, 0, transactionName);
 		migrationStep.setAD_Migration_ID(migrationId);
 		Element step = (Element) stepNode;
 		migrationStep.setSeqNo(Integer.parseInt(step.getAttribute("SeqNo")));
 		migrationStep.setStepType(step.getAttribute("StepType"));
 		migrationStep.setStatusCode(MMigrationStep.STATUSCODE_Unapplied);
 		migrationStep.setIsDirectLoad(true);
-		migrationStep.saveEx(null);
+		migrationStep.saveEx();
 		Node comment = (Element) step.getElementsByTagName("Comments").item(0);
 		if (comment != null) {
 			migrationStep.setComments(comment.getTextContent());
@@ -194,7 +203,7 @@ public class XMLMigration implements IMigrationManagement {
 				migrationStep.setRecord_ID(Integer.parseInt(element.getAttribute("Record_ID")));
 				NodeList data = element.getElementsByTagName("Data");
 				for (int j =0 ; j < data.getLength(); j++) {
-					saveNodeFromXmlNode(ctx, migrationStep.getAD_MigrationStep_ID(), data.item(j));
+					saveNodeFromXmlNode(ctx, migrationStep.getAD_MigrationStep_ID(), data.item(j), transactionName);
 				}
 			}
 		} else if (MMigrationStep.STEPTYPE_SQLStatement.equals(migrationStep.getStepType())) {
@@ -217,8 +226,8 @@ public class XMLMigration implements IMigrationManagement {
 		log.log(Level.CONFIG, migrationStep.getAD_Migration().toString() + ": Step " + migrationStep.getSeqNo() + " loaded");
 	}
 
-	private void saveNodeFromXmlNode(Properties ctx, int stepId, Node item) {
-		MMigrationData data = new MMigrationData(ctx, 0, null);
+	private void saveNodeFromXmlNode(Properties ctx, int stepId, Node item, String transactionName) {
+		MMigrationData data = new MMigrationData(ctx, 0, transactionName);
 		data.setAD_MigrationStep_ID(stepId);
 		Element element = (Element)item;
 		data.setIsOldNull("true".equals(element.getAttribute("isOldNull")));
@@ -227,7 +236,7 @@ public class XMLMigration implements IMigrationManagement {
 		data.setIsNewNull("true".equals(element.getAttribute("isNewNull")));
 		data.setNewValue(element.getTextContent());
 		data.setIsDirectLoad(true);
-		data.saveEx(null);
+		data.saveEx();
 	}
 
 	@Override
