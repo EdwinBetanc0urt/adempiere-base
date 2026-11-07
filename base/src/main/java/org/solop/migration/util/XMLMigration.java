@@ -25,6 +25,8 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
 import java.io.FileWriter;
+import java.sql.SQLException;
+import java.sql.Savepoint;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -94,6 +96,7 @@ public class XMLMigration implements IMigrationManagement {
 		}
 		//	Files are loaded in parallel: the map must be thread safe or entries are lost
 		Map<String, Integer> migrationsToApply = new ConcurrentHashMap<>();
+		long start = System.currentTimeMillis();
 		files.parallelStream().forEach(file ->{
 			try {
 				int migrationId = loadFile(file, finder);
@@ -104,6 +107,10 @@ public class XMLMigration implements IMigrationManagement {
 				log.log(Level.SEVERE, "Error loading " + file + ": " + e.getLocalizedMessage(), e);
 			}
 		});
+		//	Measure of the import: compare it between versions on the same database
+		log.log(Level.INFO, "Imported migrations=" + migrationsToApply.size() + " files=" + files.size()
+				+ " threads=" + java.util.concurrent.ForkJoinPool.getCommonPoolParallelism()
+				+ " elapsed=" + (System.currentTimeMillis() - start) + "ms");
 		return migrationsToApply.keySet().stream()
 				.sorted()
 				.map(migrationsToApply::get)
@@ -167,18 +174,49 @@ public class XMLMigration implements IMigrationManagement {
 		NodeList children = element.getElementsByTagName("Step");
 		Stream<Node> nodeStream = IntStream.range(0, children.getLength())
 				.mapToObj(children::item);
-		//	A step that fails aborts the whole migration (the transaction is rolled back)
+		//	Each step is saved inside a savepoint: when it fails only that step is rolled back and it is registered
+		//	as Failed with the error, so the migration stays complete and the failure is visible in the dictionary
+		//	(StatusCode <> Applied, error on the step) as it always was
+		Trx transaction = Trx.get(transactionName, false);
 		nodeStream.forEach(elementValue -> {
 			Element step = (Element) elementValue;
 			if ( "Step".equals(step.getTagName())) {
+				Savepoint savepoint = null;
 				try {
+					savepoint = transaction.setSavepoint(null);
 					saveStepFromXmlNode(ctx, migration.getAD_Migration_ID(), step, transactionName);
+					transaction.releaseSavepoint(savepoint);
 				} catch (Exception e) {
-					throw new AdempiereException(migration + ": Step " + step.getAttribute("SeqNo") + " not imported: " + e.getLocalizedMessage(), e);
+					String error = "Import failed: " + e.getLocalizedMessage();
+					log.log(Level.SEVERE, migration + ": Step " + step.getAttribute("SeqNo") + " " + error, e);
+					try {
+						if (savepoint != null) {
+							transaction.rollback(savepoint);
+						}
+					} catch (SQLException rollbackError) {
+						throw new AdempiereException(rollbackError);
+					}
+					saveFailedStep(ctx, migration.getAD_Migration_ID(), step, error, transactionName);
 				}
 			}
 		});
 		return migration;
+	}
+
+	/**
+	 * Register a step that could not be imported: Failed, without table/data, with the error in ErrorMsg and Comments
+	 * (applying it overwrites ErrorMsg, the comment keeps the import error). The migrator repair re-creates it from the XML.
+	 */
+	private void saveFailedStep(Properties ctx, int migrationId, Element step, String error, String transactionName) {
+		MMigrationStep migrationStep = new MMigrationStep(ctx, 0, transactionName);
+		migrationStep.setAD_Migration_ID(migrationId);
+		migrationStep.setSeqNo(Integer.parseInt(step.getAttribute("SeqNo").trim()));
+		migrationStep.setStepType(step.getAttribute("StepType"));
+		migrationStep.setStatusCode(MMigrationStep.STATUSCODE_Failed);
+		migrationStep.setErrorMsg(error);
+		migrationStep.setComments(error);
+		migrationStep.setIsDirectLoad(true);
+		migrationStep.saveEx();
 	}
 
 	private void saveStepFromXmlNode(Properties ctx, int migrationId, Node stepNode, String transactionName) {
