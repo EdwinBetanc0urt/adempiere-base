@@ -44,6 +44,17 @@ public class XMLMigration implements IMigrationManagement {
 
 	private final DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 	private final CLogger log = CLogger.getCLogger(this.getClass());
+	/**	The factory is not thread safe and files are loaded in parallel: one builder per thread, created from the
+	 * 	configured factory (namespaces, whitespace, secure features) only while holding its lock	*/
+	private final ThreadLocal<DocumentBuilder> documentBuilder = ThreadLocal.withInitial(() -> {
+		synchronized (dbf) {
+			try {
+				return dbf.newDocumentBuilder();
+			} catch (Exception e) {
+				throw new AdempiereException(e);
+			}
+		}
+	});
 
 	public XMLMigration() {
 		dbf.setNamespaceAware(true);
@@ -124,7 +135,9 @@ public class XMLMigration implements IMigrationManagement {
 				return -1;
 			}
 			log.log(Level.CONFIG, "Loading file: " + file);
-			Document doc = dbf.newDocumentBuilder().parse(file);
+			DocumentBuilder builder = documentBuilder.get();
+			builder.reset();
+			Document doc = builder.parse(file);
 			NodeList migrations = doc.getDocumentElement().getElementsByTagName("Migration");
 			if(migrations.getLength() > 0) {
 				Element element = (Element) migrations.item(0);
