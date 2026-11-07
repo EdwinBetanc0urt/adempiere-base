@@ -24,6 +24,7 @@ import org.compiere.util.CLogger;
 import org.compiere.util.DB;
 import org.compiere.util.DisplayType;
 import org.compiere.util.Env;
+import org.compiere.util.Trx;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -37,7 +38,9 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 
@@ -343,21 +346,35 @@ public class MMigrationStep extends X_AD_MigrationStep {
         {
         	//	Synchronize column first
         	getParent().syncColumn();
-        	//	
-		     Connection conn = DB.getConnectionRW();
+        	//	DDL (structure changes) runs outside the migration transaction with autocommit, so statements that
+        	//	cannot run in a transaction block (e.g. CREATE INDEX CONCURRENTLY) work. DML runs in the transaction
+        	//	of the migration (when there is one) so it is rolled back with the AD steps when the migration fails.
+        	List<String> statements = getStatements(sqlStatements, isParse);
+        	Trx migrationTrx = get_TrxName() == null ? null : Trx.get(get_TrxName(), false);
+        	boolean isDDL = isDDL(statements);
+        	boolean isMigrationTrx = !isDDL && migrationTrx != null;
+		     Connection conn = isMigrationTrx ? migrationTrx.getConnection() : DB.getConnectionRW();
 		     Statement stmt = null;
+		     java.sql.Savepoint savepoint = null;
 		     try {
 		
-		         conn.setAutoCommit(false);
+		         if (isMigrationTrx) {
+		             //	A failed statement aborts the whole transaction: roll back only this step
+		             savepoint = conn.setSavepoint();
+		         } else {
+		             conn.setAutoCommit(isDDL);
+		         }
 		         stmt = conn.createStatement();
+		         if (isDDL && DB.isPostgreSQL()) {
+		             //	Never wait forever for a lock held by the open migration transaction (DML of a previous step
+		             //	on the same table): fail with an error instead of hanging the migrator
+		             stmt.execute("SET lock_timeout = '" + MSysConfig.getIntValue("MIGRATION_DDL_LOCK_TIMEOUT", 120) + "s'");
+		         }
 		
 		         //  Parse the statement based on semi-colons
 		         if (isParse) {
-		             StringTokenizer tokens = new StringTokenizer(sqlStatements, ";");
-		             while(tokens.hasMoreTokens()) {
-		                 final String sql = tokens.nextToken().trim();
-		                 if (sql != null && sql.length() > 0 )
-		                    stmt.addBatch(sql);
+		             for (String sql : statements) {
+		                 stmt.addBatch(sql);
 		             }
 		             stmt.executeBatch();
 		         } 
@@ -365,19 +382,33 @@ public class MMigrationStep extends X_AD_MigrationStep {
 			         stmt.executeUpdate(sqlStatements);
 			     }
 		
-		         conn.commit();
+		         if (isMigrationTrx) {
+		             conn.releaseSavepoint(savepoint);
+		         } else {
+		             if (!isDDL) {
+		                 conn.commit();
+		             }
+		             closeOwnConnection(conn);
+		         }
 		         setStatusCode(rollback ? MMigrationStep.STATUSCODE_Unapplied : MMigrationStep.STATUSCODE_Applied);
 		         setApply(rollback ? MMigrationStep.APPLY_Apply : MMigrationStep.APPLY_Rollback);
 		         setErrorMsg(null);
-		         conn.close();
 		     } catch (SQLException e) {
 		         SQLException ne = e.getNextException();
 		
 		         // Try to close the connection.  If not failing on error and there are
 		         // many errors, we could be left with a lot of hanging connections.
 		         try {
-		             conn.rollback();
-		             conn.close();
+		             if (isMigrationTrx) {
+		                 if (savepoint != null) {
+		                     conn.rollback(savepoint);
+		                 }
+		             } else {
+		                 if (!conn.getAutoCommit()) {
+		                     conn.rollback();
+		                 }
+		                 closeOwnConnection(conn);
+		             }
 		         } catch (SQLException se) {
 		             ;  // all out of luck
 		         }
@@ -411,6 +442,85 @@ public class MMigrationStep extends X_AD_MigrationStep {
 		return rollback ? "successfully rolled back" : "successfully applied";
 	}
 	
+	/**	Statements that change the structure of the database (DDL)	*/
+	private static final Set<String> DDL_COMMANDS = Set.of("CREATE", "ALTER", "DROP", "TRUNCATE", "COMMENT", "GRANT",
+			"REVOKE", "REINDEX", "VACUUM", "ANALYZE", "CLUSTER", "REFRESH");
+
+	/**
+	 * Split the SQL of the step in statements (by semicolons when it is parsed, else one statement)
+	 * @param sqlStatements SQL of the step
+	 * @param isParse split by semicolons
+	 * @return statements without blanks
+	 */
+	private static List<String> getStatements(String sqlStatements, boolean isParse) {
+		List<String> statements = new ArrayList<>();
+		if (isParse) {
+			StringTokenizer tokens = new StringTokenizer(sqlStatements, ";");
+			while (tokens.hasMoreTokens()) {
+				String sql = tokens.nextToken().trim();
+				if (sql.length() > 0) {
+					statements.add(sql);
+				}
+			}
+		} else {
+			statements.add(sqlStatements);
+		}
+		return statements;
+	}
+
+	/**
+	 * A step is DDL when all its statements change the structure of the database. A step that mixes DDL with DML,
+	 * or a block (DO, function call), is treated as DML and runs in the migration transaction.
+	 * @param statements statements of the step
+	 * @return true when every statement is DDL
+	 */
+	static boolean isDDL(List<String> statements) {
+		if (statements.isEmpty()) {
+			return false;
+		}
+		return statements.stream().allMatch(sql -> DDL_COMMANDS.contains(getCommand(sql)));
+	}
+
+	/**
+	 * First keyword of a statement, skipping blanks and comments
+	 * @param sql statement
+	 * @return keyword in upper case or empty
+	 */
+	private static String getCommand(String sql) {
+		String text = sql.trim();
+		while (text.startsWith("--") || text.startsWith("/*")) {
+			int end = text.startsWith("--") ? text.indexOf('\n') : text.indexOf("*/");
+			if (end < 0) {
+				return "";
+			}
+			text = text.substring(end + (text.startsWith("--") ? 1 : 2)).trim();
+		}
+		int index = 0;
+		while (index < text.length() && Character.isLetter(text.charAt(index))) {
+			index++;
+		}
+		return text.substring(0, index).toUpperCase(Locale.ROOT);
+	}
+
+	/**
+	 * Close a connection opened only for this step (never the one of the migration transaction)
+	 * @param conn connection
+	 */
+	private static void closeOwnConnection(Connection conn) throws SQLException {
+		if (DB.isPostgreSQL()) {
+			//	The connection returns to the pool: do not keep the lock timeout of the DDL
+			try (Statement reset = conn.createStatement()) {
+				reset.execute("RESET lock_timeout");
+			} catch (SQLException e) {
+				;	//	the connection is closed anyway
+			}
+		}
+		if (!conn.getAutoCommit()) {
+			conn.setAutoCommit(true);
+		}
+		conn.close();
+	}
+
 	/**
 	 * Convert string representation to appropriate object type
 	 * for column
