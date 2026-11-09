@@ -4,20 +4,21 @@
 package org.solop.migration.util;
 
 
-import org.adempiere.core.domains.models.I_AD_Migration;
-import org.compiere.model.MMigration;
-import org.compiere.model.Query;
-import org.compiere.util.Env;
+import org.adempiere.exceptions.AdempiereException;
+import org.compiere.util.DB;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  *    @author Yamel Senih, yamel.senih@solopsoftware.com, Solop <a href="http://www.solopsoftware.com">solopsoftware.com</a>
  */
 public class MigrationFinder {
-    private final Map<String, Boolean> currentMigrations = new HashMap<>();
+    //	Read from the importer threads (files are loaded in parallel): it must be thread safe
+    private final Set<String> currentMigrations = ConcurrentHashMap.newKeySet();
 
     public MigrationFinder() {
         loadCurrentMigrations();
@@ -32,18 +33,28 @@ public class MigrationFinder {
     }
 
     public boolean existsMigration(String entityType, String releaseNo, String name, int sequence) {
-        return currentMigrations.getOrDefault(getMigrationKey(entityType, releaseNo, name, sequence), false);
+        return currentMigrations.contains(getMigrationKey(entityType, releaseNo, name, sequence));
     }
 
+    /**
+     * Load the keys of the registered migrations with one query: loading each migration in a parallel stream into a
+     * not synchronized map could lose keys, and a lost key makes the importer register the migration again (duplicate)
+     */
     private void loadCurrentMigrations() {
-        new Query(Env.getCtx(), I_AD_Migration.Table_Name, null, null)
-                .setOnlyActiveRecords(true)
-                .getIDsAsList()
-                .parallelStream()
-                .forEach(migrationId -> {
-                    MMigration migration = new MMigration(Env.getCtx(), migrationId, null);
-                    String name = migration.getName().trim();
-                    currentMigrations.put(getMigrationKey(migration.getEntityType(), migration.getReleaseNo(), name, migration.getSeqNo()), true);
-                });
+        String sql = "SELECT EntityType, ReleaseNo, Name, SeqNo FROM AD_Migration WHERE IsActive = 'Y'";
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
+        try {
+            statement = DB.prepareStatement(sql, null);
+            resultSet = statement.executeQuery();
+            while (resultSet.next()) {
+                currentMigrations.add(getMigrationKey(resultSet.getString(1), resultSet.getString(2),
+                        Optional.ofNullable(resultSet.getString(3)).orElse("").trim(), resultSet.getInt(4)));
+            }
+        } catch (Exception e) {
+            throw new AdempiereException(e);
+        } finally {
+            DB.close(resultSet, statement);
+        }
     }
 }
