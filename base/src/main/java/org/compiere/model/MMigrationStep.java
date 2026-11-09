@@ -346,13 +346,17 @@ public class MMigrationStep extends X_AD_MigrationStep {
         {
         	//	Synchronize column first
         	getParent().syncColumn();
-        	//	DDL (structure changes) runs outside the migration transaction with autocommit, so statements that
-        	//	cannot run in a transaction block (e.g. CREATE INDEX CONCURRENTLY) work. DML runs in the transaction
-        	//	of the migration (when there is one) so it is rolled back with the AD steps when the migration fails.
+        	//	The SQL runs in the transaction of the migration (when there is one), DDL included: PostgreSQL DDL is
+        	//	transactional, so the step sees what the previous steps of the migration did (and waits for no lock
+        	//	held by that transaction) and is rolled back with them. Only statements that PostgreSQL cannot run
+        	//	in a transaction block (CONCURRENTLY, VACUUM, CREATE DATABASE, ...) run on their own connection
+        	//	with autocommit and a lock timeout. Without a migration transaction the step uses its own connection
+        	//	and transaction, as before.
         	List<String> statements = getStatements(sqlStatements, isParse);
         	Trx migrationTrx = get_TrxName() == null ? null : Trx.get(get_TrxName(), false);
-        	boolean isDDL = isDDL(statements);
-        	boolean isMigrationTrx = !isDDL && migrationTrx != null;
+        	boolean isNonTransactional = isNonTransactional(statements);
+        	boolean isMigrationTrx = !isNonTransactional && migrationTrx != null;
+        	String statusTrxName = isMigrationTrx ? get_TrxName() : null;
 		     Connection conn = isMigrationTrx ? migrationTrx.getConnection() : DB.getConnectionRW();
 		     Statement stmt = null;
 		     java.sql.Savepoint savepoint = null;
@@ -362,12 +366,12 @@ public class MMigrationStep extends X_AD_MigrationStep {
 		             //	A failed statement aborts the whole transaction: roll back only this step
 		             savepoint = conn.setSavepoint();
 		         } else {
-		             conn.setAutoCommit(isDDL);
+		             conn.setAutoCommit(isNonTransactional);
 		         }
 		         stmt = conn.createStatement();
-		         if (isDDL && DB.isPostgreSQL()) {
-		             //	Never wait forever for a lock held by the open migration transaction (DML of a previous step
-		             //	on the same table): fail with an error instead of hanging the migrator
+		         if (isNonTransactional && DB.isPostgreSQL()) {
+		             //	Never wait forever for a lock held by the open migration transaction (a previous step on the
+		             //	same table): fail with an error instead of hanging the migrator
 		             stmt.execute("SET lock_timeout = '" + MSysConfig.getIntValue("MIGRATION_DDL_LOCK_TIMEOUT", 120) + "s'");
 		         }
 		
@@ -385,7 +389,7 @@ public class MMigrationStep extends X_AD_MigrationStep {
 		         if (isMigrationTrx) {
 		             conn.releaseSavepoint(savepoint);
 		         } else {
-		             if (!isDDL) {
+		             if (!isNonTransactional) {
 		                 conn.commit();
 		             }
 		             closeOwnConnection(conn);
@@ -429,7 +433,9 @@ public class MMigrationStep extends X_AD_MigrationStep {
 
 		     } finally {
 		         DB.close(stmt);
-		         saveEx(null);
+		         //	The status goes with the SQL: in the migration transaction when the SQL ran there (committed or
+		         //	rolled back with it, as the AD steps), else committed now as before
+		         saveEx(statusTrxName);
 		     }
 		 }
         else 
@@ -442,9 +448,9 @@ public class MMigrationStep extends X_AD_MigrationStep {
 		return rollback ? "successfully rolled back" : "successfully applied";
 	}
 	
-	/**	Statements that change the structure of the database (DDL)	*/
-	private static final Set<String> DDL_COMMANDS = Set.of("CREATE", "ALTER", "DROP", "TRUNCATE", "COMMENT", "GRANT",
-			"REVOKE", "REINDEX", "VACUUM", "ANALYZE", "CLUSTER", "REFRESH");
+	/**	Commands that PostgreSQL cannot run inside a transaction block	*/
+	private static final Set<String> NON_TRANSACTIONAL_COMMANDS = Set.of("VACUUM", "CREATE DATABASE", "DROP DATABASE",
+			"CREATE TABLESPACE", "DROP TABLESPACE", "ALTER SYSTEM");
 
 	/**
 	 * Split the SQL of the step in statements (by semicolons when it is parsed, else one statement)
@@ -469,24 +475,28 @@ public class MMigrationStep extends X_AD_MigrationStep {
 	}
 
 	/**
-	 * A step is DDL when all its statements change the structure of the database. A step that mixes DDL with DML,
-	 * or a block (DO, function call), is treated as DML and runs in the migration transaction.
+	 * A step runs outside the migration transaction when any of its statements cannot run inside a transaction
+	 * block: CREATE/DROP INDEX CONCURRENTLY, REINDEX ... CONCURRENTLY, VACUUM, CREATE/DROP DATABASE,
+	 * CREATE/DROP TABLESPACE, ALTER SYSTEM. Such statements should be alone in their step.
 	 * @param statements statements of the step
-	 * @return true when every statement is DDL
+	 * @return true when the step cannot run in the migration transaction
 	 */
-	static boolean isDDL(List<String> statements) {
-		if (statements.isEmpty()) {
-			return false;
-		}
-		return statements.stream().allMatch(sql -> DDL_COMMANDS.contains(getCommand(sql)));
+	static boolean isNonTransactional(List<String> statements) {
+		return statements.stream().anyMatch(sql -> {
+			String text = getText(sql);
+			if (text.matches("(?s).*\\bCONCURRENTLY\\b.*")) {
+				return true;
+			}
+			return NON_TRANSACTIONAL_COMMANDS.stream().anyMatch(command -> text.startsWith(command + " ") || text.equals(command));
+		});
 	}
 
 	/**
-	 * First keyword of a statement, skipping blanks and comments
+	 * Statement in upper case without leading comments and with blanks collapsed
 	 * @param sql statement
-	 * @return keyword in upper case or empty
+	 * @return normalized text
 	 */
-	private static String getCommand(String sql) {
+	private static String getText(String sql) {
 		String text = sql.trim();
 		while (text.startsWith("--") || text.startsWith("/*")) {
 			int end = text.startsWith("--") ? text.indexOf('\n') : text.indexOf("*/");
@@ -495,11 +505,7 @@ public class MMigrationStep extends X_AD_MigrationStep {
 			}
 			text = text.substring(end + (text.startsWith("--") ? 1 : 2)).trim();
 		}
-		int index = 0;
-		while (index < text.length() && Character.isLetter(text.charAt(index))) {
-			index++;
-		}
-		return text.substring(0, index).toUpperCase(Locale.ROOT);
+		return text.replaceAll("\\s+", " ").toUpperCase(Locale.ROOT);
 	}
 
 	/**
