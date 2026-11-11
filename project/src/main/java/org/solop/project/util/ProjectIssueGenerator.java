@@ -20,10 +20,15 @@ package org.solop.project.util;
 
 import org.adempiere.core.domains.models.I_M_Transaction;
 import org.adempiere.exceptions.AdempiereException;
+import org.compiere.model.MInOutLine;
+import org.compiere.model.MLocator;
 import org.compiere.model.MProduct;
 import org.compiere.model.MProject;
 import org.compiere.model.MProjectIssue;
 import org.compiere.model.MProjectLine;
+import org.compiere.model.MStorage;
+import org.compiere.model.MTimeExpenseLine;
+import org.compiere.model.MWarehouse;
 import org.compiere.model.Query;
 import org.compiere.process.DocAction;
 import org.compiere.util.Env;
@@ -33,6 +38,7 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
 
 /**
@@ -144,7 +150,7 @@ public class ProjectIssueGenerator {
 	 */
 	public MProjectIssue createIssue(MProjectLine projectLine, int locatorId, int productId, int attributeSetInstanceId,
 			BigDecimal quantity, String sourceDescription) {
-		return createIssue(projectLine, locatorId, productId, attributeSetInstanceId, quantity, sourceDescription, 0, 0);
+		return createIssue(projectLine, locatorId, productId, attributeSetInstanceId, quantity, sourceDescription, 0, 0, 0);
 	}
 
 	/**
@@ -161,13 +167,47 @@ public class ProjectIssueGenerator {
 	 */
 	public MProjectIssue createIssue(MProjectLine projectLine, int locatorId, int productId, int attributeSetInstanceId,
 			BigDecimal quantity, String sourceDescription, int inOutLineId, int timeExpenseLineId) {
-		if (locatorId <= 0) {
-			throw new AdempiereException("@M_Locator_ID@ @NotFound@");
+		return createIssue(projectLine, locatorId, productId, attributeSetInstanceId, quantity, sourceDescription,
+				inOutLineId, timeExpenseLineId, 0);
+	}
+
+	/**
+	 * Create and complete a project issue from a receipt or expense report line, optionally for a charge
+	 * @param projectLine project line that receives the issue
+	 * @param locatorId locator of the issued product, ignored for not storable products and charges
+	 * @param productId product, 0 for a charge
+	 * @param attributeSetInstanceId attribute set instance, 0 to apply the material policy
+	 * @param quantity quantity to issue
+	 * @param sourceDescription description of the source document
+	 * @param inOutLineId receipt line
+	 * @param timeExpenseLineId expense report line
+	 * @param chargeId charge, 0 when the line has a product
+	 * @return completed project issue
+	 */
+	public MProjectIssue createIssue(MProjectLine projectLine, int locatorId, int productId, int attributeSetInstanceId,
+			BigDecimal quantity, String sourceDescription, int inOutLineId, int timeExpenseLineId, int chargeId) {
+		//	A null quantity is treated as zero to avoid failures on the arithmetic and the document
+		quantity = Optional.ofNullable(quantity).orElse(BigDecimal.ZERO);
+		//	The locator is only needed for stocked products; services, resources and charges issue without one
+		MProduct product = productId > 0 ? MProduct.get(context, productId) : null;
+		boolean requiresLocator = product != null && product.isStocked();
+		if (requiresLocator) {
+			if (locatorId <= 0) {
+				locatorId = getFallbackLocatorId(projectLine, inOutLineId, timeExpenseLineId, productId, attributeSetInstanceId, quantity);
+			}
+			if (locatorId <= 0) {
+				throw new AdempiereException("@M_Locator_ID@ @NotFound@");
+			}
+			validateOnHand(locatorId, productId, attributeSetInstanceId, quantity);
+		} else {
+			locatorId = 0;
 		}
-		validateOnHand(locatorId, productId, attributeSetInstanceId, quantity);
 		MProjectIssue projectIssue = new MProjectIssue(projectLine.getProject());
 		projectIssue.setMandatory(locatorId, productId, quantity);
 		projectIssue.setM_AttributeSetInstance_ID(attributeSetInstanceId);
+		if (chargeId > 0) {
+			projectIssue.setC_Charge_ID(chargeId);
+		}
 		projectIssue.setC_ProjectLine_ID(projectLine.getC_ProjectLine_ID());
 		if (projectLine.getC_ProjectPhase_ID() > 0) {
 			projectIssue.setC_ProjectPhase_ID(projectLine.getC_ProjectPhase_ID());
@@ -227,5 +267,60 @@ public class ProjectIssueGenerator {
 			throw new AdempiereException("@NotEnoughStocked@ " + product.getValue() + " - " + product.getName()
 					+ ": @QtyAvailable@ " + qtyOnHand);
 		}
+	}
+
+	/**
+	 * Find an active locator for the warehouse, falling back to storage, default locator, or first active locator
+	 */
+	public int getWarehouseLocatorId(int warehouseId, int productId, int attributeSetInstanceId, BigDecimal quantity) {
+		int locatorId = 0;
+		if (warehouseId > 0 && productId > 0) {
+			locatorId = MStorage.getM_Locator_ID(warehouseId, productId, attributeSetInstanceId, quantity, transactionName);
+		}
+		if (locatorId <= 0 && warehouseId > 0) {
+			MWarehouse warehouse = MWarehouse.get(context, warehouseId);
+			if (warehouse != null) {
+				MLocator defaultLocator = MLocator.getDefault(warehouse);
+				if (defaultLocator != null) {
+					locatorId = defaultLocator.getM_Locator_ID();
+				}
+				if (locatorId <= 0) {
+					locatorId = warehouse.getLocatorsAsList(false).stream()
+							.filter(MLocator::isActive)
+							.findFirst()
+							.map(MLocator::getM_Locator_ID)
+							.orElse(0);
+				}
+			}
+		}
+		return locatorId;
+	}
+
+	/**
+	 * Resolve fallback locator when not provided by the source line
+	 */
+	private int getFallbackLocatorId(MProjectLine projectLine, int inOutLineId, int timeExpenseLineId,
+			int productId, int attributeSetInstanceId, BigDecimal quantity) {
+		int warehouseId = 0;
+		if (inOutLineId > 0) {
+			MInOutLine inOutLine = new MInOutLine(context, inOutLineId, transactionName);
+			warehouseId = inOutLine.getM_Warehouse_ID();
+			if (warehouseId <= 0 && inOutLine.getParent() != null) {
+				warehouseId = inOutLine.getParent().getM_Warehouse_ID();
+			}
+		}
+		if (warehouseId <= 0 && timeExpenseLineId > 0) {
+			MTimeExpenseLine expenseLine = new MTimeExpenseLine(context, timeExpenseLineId, transactionName);
+			if (expenseLine.getParent() != null) {
+				warehouseId = expenseLine.getParent().getM_Warehouse_ID();
+			}
+		}
+		if (warehouseId <= 0 && projectLine != null && projectLine.getProject() != null) {
+			warehouseId = projectLine.getProject().getM_Warehouse_ID();
+		}
+		if (warehouseId <= 0) {
+			warehouseId = Env.getContextAsInt(context, "#M_Warehouse_ID");
+		}
+		return getWarehouseLocatorId(warehouseId, productId, attributeSetInstanceId, quantity);
 	}
 }

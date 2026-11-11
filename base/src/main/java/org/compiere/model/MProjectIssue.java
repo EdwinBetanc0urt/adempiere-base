@@ -241,15 +241,21 @@ public class MProjectIssue extends X_C_ProjectIssue implements IDocumentLine, Do
 		if (m_processMsg != null)
 			return DocAction.STATUS_Invalid;
 
-		if (getM_Product_ID() == 0)
+		//	A charge can be issued without a product
+		if (getM_Product_ID() == 0 && getC_Charge_ID() <= 0)
 		{
 			m_processMsg = "@M_Product_ID@ @NotFound@";
 			return DocAction.STATUS_Invalid;
 		}
-		if (getM_Locator_ID() == 0)
+		//	The locator is only required for stocked products, as the receipt does for not storable products
+		if (getM_Product_ID() > 0)
 		{
-			m_processMsg = "@M_Locator_ID@ @NotFound@";
-			return DocAction.STATUS_Invalid;
+			MProduct product = MProduct.get(getCtx(), getM_Product_ID());
+			if (product != null && product.isStocked() && getM_Locator_ID() == 0)
+			{
+				m_processMsg = "@M_Locator_ID@ @NotFound@";
+				return DocAction.STATUS_Invalid;
+			}
 		}
 
 		//	Std Period open?
@@ -314,9 +320,9 @@ public class MProjectIssue extends X_C_ProjectIssue implements IDocumentLine, Do
 			return DocAction.STATUS_Invalid;
 
 		log.info(toString());
-		//	If not a stocked Item there are no material transactions
-		MProduct product = MProduct.get (getCtx(), getM_Product_ID());
-		if (product.isStocked())
+		//	If not a stocked Item (service, resource or charge) there are no material transactions
+		MProduct product = getM_Product_ID() > 0 ? MProduct.get (getCtx(), getM_Product_ID()) : null;
+		if (product != null && product.isStocked())
 		{
 			//	Ignore the Material Policy when is Reverse Correction
 			if (!isReversal())

@@ -28,6 +28,7 @@ import org.compiere.util.Util;
 import org.solop.project.util.ProjectIssueGenerator;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 /**
  * Issue to the project the selected lines of completed vendor receipts.
@@ -47,8 +48,10 @@ public class ProjectIssueFromReceipt extends ProjectIssueFromReceiptAbstract {
 				.withDescription(getDescription());
 		int created = 0;
 		for (int inOutLineId : getSelectionKeys()) {
-			BigDecimal quantity = getSelectionAsBigDecimal(inOutLineId, COLUMN_MOVEMENT_QTY);
-			ProjectIssueGenerator.validateQuantity(quantity, getSelectionAsBigDecimal(inOutLineId, COLUMN_QTY_PENDING));
+			BigDecimal quantity = Optional.ofNullable(getSelectionAsBigDecimal(inOutLineId, COLUMN_MOVEMENT_QTY))
+					.orElse(BigDecimal.ZERO);
+			ProjectIssueGenerator.validateQuantity(quantity,
+					Optional.ofNullable(getSelectionAsBigDecimal(inOutLineId, COLUMN_QTY_PENDING)).orElse(BigDecimal.ZERO));
 			MInOutLine inOutLine = new MInOutLine(getCtx(), inOutLineId, get_TrxName());
 			if (inOutLine.getC_Project_ID() <= 0) {
 				throw new AdempiereException("@C_Project_ID@ @NotFound@ - @M_InOutLine_ID@ " + inOutLine.getLine());
@@ -61,7 +64,7 @@ public class ProjectIssueFromReceipt extends ProjectIssueFromReceiptAbstract {
 					: inOutLine.getDescription();
 			MProjectIssue projectIssue = generator.createIssue(projectLine, inOutLine.getM_Locator_ID(),
 					inOutLine.getM_Product_ID(), inOutLine.getM_AttributeSetInstance_ID(), quantity, sourceDescription,
-					inOutLine.getM_InOutLine_ID(), 0);
+					inOutLine.getM_InOutLine_ID(), 0, inOutLine.getC_Charge_ID());
 			addLog(projectIssue.getC_ProjectIssue_ID(), projectIssue.getMovementDate(), projectIssue.getMovementQty(),
 					projectIssue.getDocumentNo());
 			created++;

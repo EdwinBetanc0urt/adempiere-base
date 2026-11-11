@@ -126,7 +126,7 @@ public class Doc_ProjectIssue extends Doc
 
 		MProject project = new MProject (getCtx(), m_issue.getC_Project_ID(), getTrxName());
 		String ProjectCategory = project.getProjectCategory();
-		MProduct product = MProduct.get(getCtx(), m_issue.getM_Product_ID());
+		MProduct product = m_issue.getM_Product_ID() > 0 ? MProduct.get(getCtx(), m_issue.getM_Product_ID()) : null;
 			
 		//  Line pointers
 		FactLine dr = null;
@@ -153,7 +153,7 @@ public class Doc_ProjectIssue extends Doc
 
 		if (costs.signum() == 0)
 		{
-			p_Error = "Resubmit - No Costs for " + product.getName();
+			p_Error = "Resubmit - No Costs for " + (product != null ? product.getName() : getDocumentNo());
 			log.log(Level.WARNING, p_Error);
 			return null;
 		}
@@ -166,15 +166,25 @@ public class Doc_ProjectIssue extends Doc
 			getAccount(acctType, as), as.getC_Currency_ID(), costs, null);
 		dr.setQty(issueQty);
 
-		//  Inventory               CR
-		acctType = ProductCost.ACCTTYPE_P_Asset;
-		if (product.isService())
-			acctType = ProductCost.ACCTTYPE_P_Expense;
-		cr = fact.createLine(m_line,
-			m_line.getAccount(acctType,as),
-			as.getC_Currency_ID(), null, costs);
-		cr.setM_Locator_ID(m_line.getM_Locator_ID());
-		cr.setLocationFromLocator(m_line.getM_Locator_ID(), true);	// from Loc
+		//  Inventory / Charge      CR
+		if (product != null)
+		{
+			acctType = ProductCost.ACCTTYPE_P_Asset;
+			if (product.isService())
+				acctType = ProductCost.ACCTTYPE_P_Expense;
+			cr = fact.createLine(m_line,
+				m_line.getAccount(acctType,as),
+				as.getC_Currency_ID(), null, costs);
+			cr.setM_Locator_ID(m_line.getM_Locator_ID());
+			cr.setLocationFromLocator(m_line.getM_Locator_ID(), true);	// from Loc
+		}
+		else
+		{
+			//  A charge issue credits the charge account instead of an inventory account
+			cr = fact.createLine(m_line,
+				m_line.getChargeAccount(as, costs),
+				as.getC_Currency_ID(), null, costs);
+		}
 		//
 		ArrayList<Fact> facts = new ArrayList<Fact>();
 		facts.add(fact);

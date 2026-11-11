@@ -34,6 +34,7 @@ import java.sql.Timestamp;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -70,8 +71,9 @@ public class ProjectIssueFromOrderInventory extends ProjectIssueFromOrderInvento
 				.withMovementDate(getMovementDate())
 				.withDescription(getDescription());
 		List<Integer> keys = getSelectionKeys();
-		keys.forEach(key -> ProjectIssueGenerator.validateQuantity(getSelectionAsBigDecimal(key, COLUMN_MOVEMENT_QTY),
-				getSelectionAsBigDecimal(key, COLUMN_QTY_AVAILABLE)));
+		keys.forEach(key -> ProjectIssueGenerator.validateQuantity(
+				Optional.ofNullable(getSelectionAsBigDecimal(key, COLUMN_MOVEMENT_QTY)).orElse(BigDecimal.ZERO),
+				Optional.ofNullable(getSelectionAsBigDecimal(key, COLUMN_QTY_AVAILABLE)).orElse(BigDecimal.ZERO)));
 		Map<String, List<Integer>> keysByType = keys.stream()
 				.collect(Collectors.groupingBy(key -> getCreateFromType(key), LinkedHashMap::new, Collectors.toList()));
 		keysByType.getOrDefault(CREATE_FROM_ORDER, List.of()).stream()
@@ -109,9 +111,10 @@ public class ProjectIssueFromOrderInventory extends ProjectIssueFromOrderInvento
 		keys.forEach(key -> {
 			MOrderLine orderLine = new MOrderLine(getCtx(), getSelectionAsInt(key, COLUMN_ORDER_LINE), get_TrxName());
 			MProjectLine projectLine = new MProjectLine(getCtx(), getSelectionAsInt(key, COLUMN_PROJECT_LINE), get_TrxName());
-			BigDecimal quantity = getSelectionAsBigDecimal(key, COLUMN_MOVEMENT_QTY);
+			BigDecimal quantity = Optional.ofNullable(getSelectionAsBigDecimal(key, COLUMN_MOVEMENT_QTY)).orElse(BigDecimal.ZERO);
+			//	setOrderLine resolves the locator for storable products and leaves it empty for services, resources and charges
 			MInOutLine receiptLine = new MInOutLine(receipt);
-			receiptLine.setOrderLine(orderLine, 0, quantity);
+			receiptLine.setOrderLine(orderLine, getSelectionAsInt(key, COLUMN_LOCATOR), quantity);
 			receiptLine.setQty(quantity);
 			receiptLine.setC_Project_ID(projectLine.getC_Project_ID());
 			receiptLine.setC_ProjectLine_ID(projectLine.getC_ProjectLine_ID());
@@ -133,7 +136,7 @@ public class ProjectIssueFromOrderInventory extends ProjectIssueFromOrderInvento
 			MProjectLine projectLine = new MProjectLine(getCtx(), receiptLine.getC_ProjectLine_ID(), get_TrxName());
 			addIssueLog(generator.createIssue(projectLine, receiptLine.getM_Locator_ID(), receiptLine.getM_Product_ID(),
 					receiptLine.getM_AttributeSetInstance_ID(), receiptLine.getMovementQty(), receiptLine.getDescription(),
-					receiptLine.getM_InOutLine_ID(), 0));
+					receiptLine.getM_InOutLine_ID(), 0, receiptLine.getC_Charge_ID()));
 		}
 	}
 
@@ -144,7 +147,8 @@ public class ProjectIssueFromOrderInventory extends ProjectIssueFromOrderInvento
 	private void issueFromInventory(int key) {
 		MProjectLine projectLine = new MProjectLine(getCtx(), getSelectionAsInt(key, COLUMN_PROJECT_LINE), get_TrxName());
 		addIssueLog(generator.createIssue(projectLine, getSelectionAsInt(key, COLUMN_LOCATOR),
-				getSelectionAsInt(key, COLUMN_PRODUCT), 0, getSelectionAsBigDecimal(key, COLUMN_MOVEMENT_QTY),
+				getSelectionAsInt(key, COLUMN_PRODUCT), 0,
+				Optional.ofNullable(getSelectionAsBigDecimal(key, COLUMN_MOVEMENT_QTY)).orElse(BigDecimal.ZERO),
 				projectLine.getDescription()));
 	}
 

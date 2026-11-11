@@ -29,6 +29,7 @@ import org.compiere.util.Util;
 import org.solop.project.util.ProjectIssueGenerator;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 /**
  * Issue to the project the selected lines of completed expense reports.
@@ -48,8 +49,10 @@ public class ProjectIssueFromTimeExpense extends ProjectIssueFromTimeExpenseAbst
 				.withDescription(getDescription());
 		int created = 0;
 		for (int timeExpenseLineId : getSelectionKeys()) {
-			BigDecimal quantity = getSelectionAsBigDecimal(timeExpenseLineId, COLUMN_MOVEMENT_QTY);
-			ProjectIssueGenerator.validateQuantity(quantity, getSelectionAsBigDecimal(timeExpenseLineId, COLUMN_QTY_PENDING));
+			BigDecimal quantity = Optional.ofNullable(getSelectionAsBigDecimal(timeExpenseLineId, COLUMN_MOVEMENT_QTY))
+					.orElse(BigDecimal.ZERO);
+			ProjectIssueGenerator.validateQuantity(quantity,
+					Optional.ofNullable(getSelectionAsBigDecimal(timeExpenseLineId, COLUMN_QTY_PENDING)).orElse(BigDecimal.ZERO));
 			MTimeExpenseLine expenseLine = new MTimeExpenseLine(getCtx(), timeExpenseLineId, get_TrxName());
 			if (expenseLine.getC_Project_ID() <= 0) {
 				throw new AdempiereException("@C_Project_ID@ @NotFound@ - @S_TimeExpenseLine_ID@ " + expenseLine.getLine());
