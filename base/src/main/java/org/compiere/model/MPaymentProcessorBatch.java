@@ -152,6 +152,7 @@ public class MPaymentProcessorBatch extends X_C_PaymentProcessorBatch implements
         int partnerId = batchConfiguration.getC_BPartner_ID();
         setC_BPartner_ID(partnerId);
         setC_BPartner_Location_ID(batchConfiguration.getC_BPartner_Location_ID());
+        setC_PaymentProcessor_ID(batchConfiguration.get_ValueAsInt(COLUMNNAME_C_PaymentProcessor_ID));
 
         updateOpenAmount();
         return super.beforeSave(newRecord);

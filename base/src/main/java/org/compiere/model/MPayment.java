@@ -961,6 +961,16 @@ public final class MPayment extends X_C_Payment
 	 */
 	public void setPaymentProcessor () {
 		currentPaymentProcessor = null;
+		//	Processor already defined on payment or on the store payment method (terminal)
+		MPaymentProcessor definedProcessor = MPaymentProcessor.getDefinedForPayment(this);
+		if (definedProcessor != null) {
+			currentPaymentProcessor = definedProcessor;
+			if (getC_BankAccount_ID() == 0) {
+				super.setC_BankAccount_ID(definedProcessor.getC_BankAccount_ID());
+			}
+			MPaymentProcessor.setPaymentProcessorId(this, definedProcessor.getC_PaymentProcessor_ID());
+			return;
+		}
 		//	Get Processor List
 		if (paymentProcessors == null || paymentProcessors.isEmpty()) {
 			paymentProcessors = MPaymentProcessor.find(getTenderType(), getCreditCardType(),
@@ -988,6 +998,10 @@ public final class MPayment extends X_C_Payment
 					setC_BankAccount_ID (currentPaymentProcessor.getC_BankAccount_ID());
 				}
 			}
+		}
+		//	Keep the processor used, so reverse / status / closing use the same one
+		if (currentPaymentProcessor != null) {
+			MPaymentProcessor.setPaymentProcessorId(this, currentPaymentProcessor.getC_PaymentProcessor_ID());
 		}
 	}   //  setPaymentProcessor
 

@@ -120,6 +120,7 @@ public abstract class PaymentProcessor
 
 				PO paymentProcessorRun = processorRunTable.getPO(0, mp.get_TrxName());
 				paymentProcessorRun.set_ValueOfColumn(MPayment.COLUMNNAME_C_Payment_ID, mp.get_ID());
+				MPaymentProcessor.setPaymentProcessorId(paymentProcessorRun, mpp.getC_PaymentProcessor_ID());
 				paymentProcessorRun.saveEx();
 				myProcessor.setPaymentProcessorRun(paymentProcessorRun);
 			}
