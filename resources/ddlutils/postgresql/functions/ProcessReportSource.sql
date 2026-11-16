@@ -32,9 +32,9 @@ CREATE OR REPLACE FUNCTION ProcessReportSource(
 	_From timestamp without time zone,
 	_To timestamp without time zone)
 RETURNS text
-    LANGUAGE 'plpgsql'
+    LANGUAGE plpgsql STABLE
     COST 100.0
-    VOLATILE 
+
 AS $function$
 
 DECLARE

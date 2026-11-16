@@ -122,7 +122,7 @@ BEGIN
  RETURN v_TotalOpenAmt;
 END;
 $BODY$
-  LANGUAGE 'plpgsql';
+  LANGUAGE plpgsql STABLE;
   
 CREATE OR REPLACE FUNCTION InvoiceopenToDate(p_c_invoice_id numeric, p_c_invoicepayschedule_id numeric, p_dateacct date)
 RETURNS numeric
@@ -148,4 +148,4 @@ BEGIN
 	RETURN InvoiceopenToDate(p_c_invoice_id, p_c_invoicepayschedule_id, p_dateacct::timestamp with time zone);
 END;
 $BODY$
-  LANGUAGE 'plpgsql';
+  LANGUAGE plpgsql STABLE;

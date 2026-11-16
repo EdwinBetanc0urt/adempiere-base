@@ -116,7 +116,7 @@ BEGIN
 	RETURN Days;
 END;
 
-$body$ LANGUAGE plpgsql;
+$body$ LANGUAGE plpgsql STABLE;
 
 
  	  	 

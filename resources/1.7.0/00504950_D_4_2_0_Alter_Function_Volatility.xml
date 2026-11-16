@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<Migrations>
+  <Migration EntityType="D" Name="Alter_Function_Volatility" ReleaseNo="4.2.0" SeqNo="504950">
+    <Comments>Alter Function Volatility</Comments>
+    <Step DBType="Postgres" Parse="N" SeqNo="10" StepType="SQL">
+      <SQLStatement>
+          -- Declares the volatility of the read-only PL/pgSQL functions of the ADempiere schema.
+          --
+          -- By default PostgreSQL treats every function as VOLATILE, which prevents the planner from flattening
+          -- views that call them (e.g. RV_Payment  paymentAllocated/paymentAvailable, RV_C_InvoiceLine
+          -- productAttribute, RV_C_Invoice charAt), from filtering/limiting before joining, and from skipping
+          -- columns nobody selects. These functions only read data (no INSERT/UPDATE/DELETE, sequences, random
+          -- values or clock functions, directly or through the functions they call), so they can be STABLE;
+          -- charAt is a pure SUBSTR and can be IMMUTABLE.
+          --
+          -- Functions that write, use sequences or randomness (nextID*, getMaxTableID, getUUID, alterColumn,
+          -- deps_*, add_missing_translations) and extension (C) functions are intentionally left untouched.
+          --
+          -- Idempotent and safe to re-run; functions missing in a database are skipped. Only catalog metadata
+          -- changes (no data).
+          DO $$
+          DECLARE
+          r RECORD;
+          f regprocedure;
+          BEGIN
+          FOR r IN
+          SELECT * FROM (VALUES
+          ('charat', 'character varying, integer', 'IMMUTABLE'),
+          ('acctbalance', 'numeric, numeric, numeric', 'STABLE'),
+          ('actualproductprice', 'numeric, numeric', 'STABLE'),
+          ('add_months', 'timestamp with time zone, numeric', 'STABLE'),
+          ('adddays', 'interval, numeric', 'STABLE'),
+          ('adddays', 'timestamp with time zone, numeric', 'STABLE'),
+          ('addweeks', 'timestamp with time zone, numeric', 'STABLE'),
+          ('addyears', 'timestamp with time zone, numeric', 'STABLE'),
+          ('bompricelimit', 'numeric, numeric', 'STABLE'),
+          ('bompricelimit', 'numeric, numeric, numeric', 'STABLE'),
+          ('bompricelist', 'numeric, numeric', 'STABLE'),
+          ('bompricelist', 'numeric, numeric, numeric', 'STABLE'),
+          ('bompricestd', 'numeric, numeric', 'STABLE'),
+          ('bompricestd', 'numeric, numeric, numeric', 'STABLE'),
+          ('bomqtyavailable', 'numeric, numeric, numeric', 'STABLE'),
+          ('bomqtyavailableasi', 'numeric, numeric, numeric, numeric', 'STABLE'),
+          ('bomqtyonhand', 'numeric, numeric, numeric', 'STABLE'),
+          ('bomqtyonhandasi', 'numeric, numeric, numeric, numeric', 'STABLE'),
+          ('bomqtyordered', 'numeric, numeric, numeric', 'STABLE'),
+          ('bomqtyorderedasi', 'numeric, numeric, numeric, numeric', 'STABLE'),
+          ('bomqtyreserved', 'numeric, numeric, numeric', 'STABLE'),
+          ('bomqtyreservedasi', 'numeric, numeric, numeric, numeric', 'STABLE'),
+          ('bpartnerremitlocation', 'numeric', 'STABLE'),
+          ('currencybase', 'numeric, numeric, timestamp with time zone, numeric, numeric', 'STABLE'),
+          ('currencybase', 'numeric, numeric, timestamp with time zone, numeric, numeric, numeric', 'STABLE'),
+          ('currencyconvert', 'numeric, numeric, numeric, timestamp with time zone, numeric, numeric, numeric', 'STABLE'),
+          ('currencyconvert_receipt', 'numeric, numeric, numeric, numeric, numeric, numeric', 'STABLE'),
+          ('currencyrate', 'numeric, numeric, timestamp with time zone, numeric, numeric, numeric', 'STABLE'),
+          ('currencyround', 'numeric, numeric, character varying', 'STABLE'),
+          ('dailysalary', 'numeric', 'STABLE'),
+          ('dailysalarytodate', 'numeric, timestamp with time zone', 'STABLE'),
+          ('dailysalarytodatebyhrprocess', 'numeric, numeric, timestamp with time zone', 'STABLE'),
+          ('daysbetween', 'timestamp with time zone, timestamp with time zone', 'STABLE'),
+          ('documentno', 'numeric', 'STABLE'),
+          ('duedate_deferreddoc', 'numeric', 'STABLE'),
+          ('f_convnl', 'numeric', 'STABLE'),
+          ('financialratetodate', 'numeric, timestamp with time zone', 'STABLE'),
+          ('firstinvoicefororder', 'numeric', 'STABLE'),
+          ('firstof', 'timestamp with time zone, character varying', 'STABLE'),
+          ('get_all_views', 'character varying', 'STABLE'),
+          ('get_sysconfig', 'character varying, character varying, numeric, numeric', 'STABLE'),
+          ('getdate', '', 'STABLE'),
+          ('invoicediscount', 'numeric, timestamp with time zone, numeric', 'STABLE'),
+          ('invoicefororder', 'numeric', 'STABLE'),
+          ('invoiceopen', 'numeric, numeric', 'STABLE'),
+          ('invoiceopentodate', 'numeric, numeric, date', 'STABLE'),
+          ('invoiceopentodate', 'numeric, numeric, timestamp with time zone', 'STABLE'),
+          ('invoicepaid', 'numeric, numeric, numeric', 'STABLE'),
+          ('invoicepaidtodate', 'numeric, numeric, numeric, timestamp with time zone', 'STABLE'),
+          ('linenetamtrealinvoiceline', 'numeric', 'STABLE'),
+          ('linenetamtrealorderline', 'numeric', 'STABLE'),
+          ('maxpaydate', 'numeric', 'STABLE'),
+          ('monthlysalary', 'numeric', 'STABLE'),
+          ('monthlysalarytodate', 'numeric, timestamp with time zone', 'STABLE'),
+          ('nextbusinessday', 'timestamp with time zone, numeric', 'STABLE'),
+          ('paymentallocated', 'numeric, numeric', 'STABLE'),
+          ('paymentavailable', 'numeric', 'STABLE'),
+          ('paymentavailabletodate', 'numeric, timestamp with time zone', 'STABLE'),
+          ('paymenttermdiscount', 'numeric, numeric, numeric, timestamp with time zone, timestamp with time zone', 'STABLE'),
+          ('paymenttermduedate', 'numeric, timestamp with time zone', 'STABLE'),
+          ('paymenttermduedays', 'numeric, timestamp with time zone, timestamp with time zone', 'STABLE'),
+          ('payreceiptavailable', 'numeric, character varying', 'STABLE'),
+          ('payreceiptavailabletodate', 'numeric, character varying, timestamp with time zone', 'STABLE'),
+          ('processreportsource', 'numeric, numeric, numeric, timestamp without time zone, timestamp without time zone', 'STABLE'),
+          ('prodqtyonhand', 'numeric, numeric', 'STABLE'),
+          ('prodqtyordered', 'numeric, numeric', 'STABLE'),
+          ('prodqtyreserved', 'numeric, numeric', 'STABLE'),
+          ('prodqtyreserved', 'numeric, numeric, integer', 'STABLE'),
+          ('productattribute', 'numeric', 'STABLE'),
+          ('round', 'numeric, numeric', 'STABLE'),
+          ('sp005_productpricelastchange', 'numeric, numeric, numeric, timestamp without time zone', 'STABLE'),
+          ('sp005_taxrateat', 'numeric, timestamp without time zone, character varying', 'STABLE'),
+          ('sp008_get_account_tree', 'numeric', 'STABLE'),
+          ('sp013_taxrateat', 'numeric, timestamp without time zone, character varying', 'STABLE'),
+          ('sp028c_invoiceopen', 'numeric, numeric', 'STABLE'),
+          ('sp028c_invoiceopentodate', 'numeric, numeric, timestamp with time zone', 'STABLE'),
+          ('sp028c_invoiceopentodate_convert', 'numeric, numeric, timestamp with time zone, numeric', 'STABLE'),
+          ('sp028c_invoicepaidtodate', 'numeric, numeric, numeric, timestamp with time zone', 'STABLE'),
+          ('sp028c_paymentavailable', 'numeric', 'STABLE'),
+          ('sp028c_payreceiptavailabletodate', 'numeric, character varying, timestamp with time zone', 'STABLE'),
+          ('subtractdays', 'interval, numeric', 'STABLE'),
+          ('subtractdays', 'timestamp with time zone, numeric', 'STABLE'),
+          ('taxamt_notinvoiced', 'numeric', 'STABLE'),
+          ('taxamtreal', 'numeric', 'STABLE'),
+          ('trunc', 'interval', 'STABLE'),
+          ('trunc', 'timestamp with time zone', 'STABLE'),
+          ('trunc', 'timestamp with time zone, character varying', 'STABLE'),
+          ('unaccent_string', 'text', 'STABLE'),
+          ('unaccent_string', 'text, numeric', 'STABLE'),
+          ('unallocatedpaymentamount', 'numeric, timestamp with time zone', 'STABLE'),
+          ('unallocatedpaymentamountconvert', 'numeric, timestamp with time zone', 'STABLE')
+          ) AS t(fname, argtypes, volatility)
+          LOOP
+          f := to_regprocedure(format('%I(%s)', r.fname, r.argtypes));
+          IF f IS NOT NULL THEN
+          EXECUTE format('ALTER FUNCTION %s %s', f, r.volatility);
+          END IF;
+          END LOOP;
+          END
+          $$;
+
+      </SQLStatement>
+      <RollbackStatement>
+          -- Reverts the volatility of the functions back to VOLATILE, the PostgreSQL default.
+          -- Undoes the STABLE/IMMUTABLE declarations applied by the forward step.
+          --
+          -- Idempotent and safe to re-run; functions missing in a database are skipped. Only catalog metadata
+          -- changes (no data).
+          DO $$
+          DECLARE
+          r RECORD;
+          f regprocedure;
+          BEGIN
+          FOR r IN
+          SELECT * FROM (VALUES
+          ('charat', 'character varying, integer'),
+          ('acctbalance', 'numeric, numeric, numeric'),
+          ('actualproductprice', 'numeric, numeric'),
+          ('add_months', 'timestamp with time zone, numeric'),
+          ('adddays', 'interval, numeric'),
+          ('adddays', 'timestamp with time zone, numeric'),
+          ('addweeks', 'timestamp with time zone, numeric'),
+          ('addyears', 'timestamp with time zone, numeric'),
+          ('bompricelimit', 'numeric, numeric'),
+          ('bompricelimit', 'numeric, numeric, numeric'),
+          ('bompricelist', 'numeric, numeric'),
+          ('bompricelist', 'numeric, numeric, numeric'),
+          ('bompricestd', 'numeric, numeric'),
+          ('bompricestd', 'numeric, numeric, numeric'),
+          ('bomqtyavailable', 'numeric, numeric, numeric'),
+          ('bomqtyavailableasi', 'numeric, numeric, numeric, numeric'),
+          ('bomqtyonhand', 'numeric, numeric, numeric'),
+          ('bomqtyonhandasi', 'numeric, numeric, numeric, numeric'),
+          ('bomqtyordered', 'numeric, numeric, numeric'),
+          ('bomqtyorderedasi', 'numeric, numeric, numeric, numeric'),
+          ('bomqtyreserved', 'numeric, numeric, numeric'),
+          ('bomqtyreservedasi', 'numeric, numeric, numeric, numeric'),
+          ('bpartnerremitlocation', 'numeric'),
+          ('currencybase', 'numeric, numeric, timestamp with time zone, numeric, numeric'),
+          ('currencybase', 'numeric, numeric, timestamp with time zone, numeric, numeric, numeric'),
+          ('currencyconvert', 'numeric, numeric, numeric, timestamp with time zone, numeric, numeric, numeric'),
+          ('currencyconvert_receipt', 'numeric, numeric, numeric, numeric, numeric, numeric'),
+          ('currencyrate', 'numeric, numeric, timestamp with time zone, numeric, numeric, numeric'),
+          ('currencyround', 'numeric, numeric, character varying'),
+          ('dailysalary', 'numeric'),
+          ('dailysalarytodate', 'numeric, timestamp with time zone'),
+          ('dailysalarytodatebyhrprocess', 'numeric, numeric, timestamp with time zone'),
+          ('daysbetween', 'timestamp with time zone, timestamp with time zone'),
+          ('documentno', 'numeric'),
+          ('duedate_deferreddoc', 'numeric'),
+          ('f_convnl', 'numeric'),
+          ('financialratetodate', 'numeric, timestamp with time zone'),
+          ('firstinvoicefororder', 'numeric'),
+          ('firstof', 'timestamp with time zone, character varying'),
+          ('get_all_views', 'character varying'),
+          ('get_sysconfig', 'character varying, character varying, numeric, numeric'),
+          ('getdate', ''),
+          ('invoicediscount', 'numeric, timestamp with time zone, numeric'),
+          ('invoicefororder', 'numeric'),
+          ('invoiceopen', 'numeric, numeric'),
+          ('invoiceopentodate', 'numeric, numeric, date'),
+          ('invoiceopentodate', 'numeric, numeric, timestamp with time zone'),
+          ('invoicepaid', 'numeric, numeric, numeric'),
+          ('invoicepaidtodate', 'numeric, numeric, numeric, timestamp with time zone'),
+          ('linenetamtrealinvoiceline', 'numeric'),
+          ('linenetamtrealorderline', 'numeric'),
+          ('maxpaydate', 'numeric'),
+          ('monthlysalary', 'numeric'),
+          ('monthlysalarytodate', 'numeric, timestamp with time zone'),
+          ('nextbusinessday', 'timestamp with time zone, numeric'),
+          ('paymentallocated', 'numeric, numeric'),
+          ('paymentavailable', 'numeric'),
+          ('paymentavailabletodate', 'numeric, timestamp with time zone'),
+          ('paymenttermdiscount', 'numeric, numeric, numeric, timestamp with time zone, timestamp with time zone'),
+          ('paymenttermduedate', 'numeric, timestamp with time zone'),
+          ('paymenttermduedays', 'numeric, timestamp with time zone, timestamp with time zone'),
+          ('payreceiptavailable', 'numeric, character varying'),
+          ('payreceiptavailabletodate', 'numeric, character varying, timestamp with time zone'),
+          ('processreportsource', 'numeric, numeric, numeric, timestamp without time zone, timestamp without time zone'),
+          ('prodqtyonhand', 'numeric, numeric'),
+          ('prodqtyordered', 'numeric, numeric'),
+          ('prodqtyreserved', 'numeric, numeric'),
+          ('prodqtyreserved', 'numeric, numeric, integer'),
+          ('productattribute', 'numeric'),
+          ('round', 'numeric, numeric'),
+          ('sp005_productpricelastchange', 'numeric, numeric, numeric, timestamp without time zone'),
+          ('sp005_taxrateat', 'numeric, timestamp without time zone, character varying'),
+          ('sp008_get_account_tree', 'numeric'),
+          ('sp013_taxrateat', 'numeric, timestamp without time zone, character varying'),
+          ('sp028c_invoiceopen', 'numeric, numeric'),
+          ('sp028c_invoiceopentodate', 'numeric, numeric, timestamp with time zone'),
+          ('sp028c_invoiceopentodate_convert', 'numeric, numeric, timestamp with time zone, numeric'),
+          ('sp028c_invoicepaidtodate', 'numeric, numeric, numeric, timestamp with time zone'),
+          ('sp028c_paymentavailable', 'numeric'),
+          ('sp028c_payreceiptavailabletodate', 'numeric, character varying, timestamp with time zone'),
+          ('subtractdays', 'interval, numeric'),
+          ('subtractdays', 'timestamp with time zone, numeric'),
+          ('taxamt_notinvoiced', 'numeric'),
+          ('taxamtreal', 'numeric'),
+          ('trunc', 'interval'),
+          ('trunc', 'timestamp with time zone'),
+          ('trunc', 'timestamp with time zone, character varying'),
+          ('unaccent_string', 'text'),
+          ('unaccent_string', 'text, numeric'),
+          ('unallocatedpaymentamount', 'numeric, timestamp with time zone'),
+          ('unallocatedpaymentamountconvert', 'numeric, timestamp with time zone')
+          ) AS t(fname, argtypes)
+          LOOP
+          f := to_regprocedure(format('%I(%s)', r.fname, r.argtypes));
+          IF f IS NOT NULL THEN
+          EXECUTE format('ALTER FUNCTION %s VOLATILE', f);
+          END IF;
+          END LOOP;
+          END
+          $$;
+
+      </RollbackStatement>
+    </Step>
+  </Migration>
+</Migrations>

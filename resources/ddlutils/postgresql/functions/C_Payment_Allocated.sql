@@ -58,6 +58,6 @@ BEGIN
 	RETURN	v_AllocatedAmt;
 END;
 
-$body$ LANGUAGE plpgsql;
+$body$ LANGUAGE plpgsql STABLE;
 
  	  	 

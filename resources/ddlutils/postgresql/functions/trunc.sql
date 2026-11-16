@@ -24,7 +24,7 @@ RETURNS TIMESTAMP WITH TIME ZONE AS $$
 BEGIN
 	RETURN CAST(datetime AS DATE);
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql STABLE;
 
 CREATE OR REPLACE FUNCTION trunc(datetime TIMESTAMP WITH TIME ZONE, format varchar)
 RETURNS DATE AS $$
@@ -43,14 +43,14 @@ BEGIN
 		RETURN CAST(datetime AS DATE);
 	END IF;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql STABLE;
 
 CREATE OR REPLACE FUNCTION trunc(i INTERVAL)
 RETURNS INTEGER AS $$
 BEGIN
 	RETURN EXTRACT(DAY FROM i);
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql STABLE;
 
 -- Function: trunc(interval)
 
@@ -63,7 +63,7 @@ BEGIN
 	RETURN EXTRACT(DAY FROM i);
 END;
 $BODY$
-  LANGUAGE plpgsql VOLATILE
+  LANGUAGE plpgsql STABLE
   COST 100;
 ALTER FUNCTION trunc(interval) OWNER TO adempiere;
 
@@ -79,7 +79,7 @@ BEGIN
 	RETURN CAST(datetime AS DATE);
 END;
 $BODY$
-  LANGUAGE plpgsql VOLATILE
+  LANGUAGE plpgsql STABLE
   COST 100;
 ALTER FUNCTION trunc(timestamp with time zone) OWNER TO adempiere;
 

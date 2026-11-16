@@ -6,9 +6,9 @@ CREATE OR REPLACE FUNCTION addweeks(
 	datetime timestamp with time zone,
 	weeks numeric)
     RETURNS date
-    LANGUAGE 'plpgsql'
+    LANGUAGE plpgsql STABLE
     COST 100.0
-    VOLATILE 
+
 AS $function$
 /******************************************************************************
  * Product: Adempiere ERP & CRM Smart Business Solution                       *

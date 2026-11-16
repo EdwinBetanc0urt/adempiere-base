@@ -44,4 +44,4 @@ BEGIN
 	RETURN v_value;
 END;
 $BODY$
-  LANGUAGE 'plpgsql';
+  LANGUAGE plpgsql STABLE;

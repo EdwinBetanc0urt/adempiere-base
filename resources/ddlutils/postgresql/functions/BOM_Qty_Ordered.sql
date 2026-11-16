@@ -139,4 +139,4 @@ BEGIN
 	RETURN 0;
 END;
 $BODY$
-  LANGUAGE 'plpgsql' ;
+  LANGUAGE plpgsql STABLE ;

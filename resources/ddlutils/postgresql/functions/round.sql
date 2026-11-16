@@ -6,4 +6,4 @@ $$
  BEGIN
 	RETURN ROUND($1, cast($2 as integer));
  END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql STABLE;

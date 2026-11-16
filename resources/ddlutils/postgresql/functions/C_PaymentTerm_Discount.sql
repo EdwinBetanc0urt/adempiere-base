@@ -63,5 +63,5 @@ BEGIN
     RETURN ROUND(COALESCE(Discount,0), 2);	--	fixed rounding
 END;
 
-$body$ LANGUAGE plpgsql;
+$body$ LANGUAGE plpgsql STABLE;
  	  	 
