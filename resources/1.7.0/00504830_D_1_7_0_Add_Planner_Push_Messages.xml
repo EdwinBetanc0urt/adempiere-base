@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<Migrations>
+  <Migration EntityType="D" Name="Add_Planner_Push_Messages" ReleaseNo="1.7.0" SeqNo="504830">
+    <Comments>Add messages for planner assignment push notifications</Comments>
+    <Step SeqNo="10" StepType="AD">
+      <PO AD_Table_ID="109" Action="I" Record_ID="523955" Table="AD_Message">
+        <Data AD_Column_ID="6765" Column="AD_Message_ID">523955</Data>
+        <Data AD_Column_ID="6766" Column="Value">PlannerPushVisit</Data>
+        <Data AD_Column_ID="198" Column="MsgText">Visit</Data>
+        <Data AD_Column_ID="199" Column="MsgTip" isNewNull="true"/>
+        <Data AD_Column_ID="197" Column="MsgType">I</Data>
+        <Data AD_Column_ID="7716" Column="EntityType">D</Data>
+        <Data AD_Column_ID="391" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="392" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="588" Column="IsActive">true</Data>
+        <Data AD_Column_ID="589" Column="Created">2026-11-11 17:00:00.000</Data>
+        <Data AD_Column_ID="590" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="591" Column="Updated">2026-11-11 17:00:00.000</Data>
+        <Data AD_Column_ID="592" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="84346" Column="UUID">3d369fb0-5f6e-480e-96a3-00584a4eed6f</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="20" StepType="AD">
+      <PO AD_Table_ID="119" Action="I" Record_ID="523955" Table="AD_Message_Trl">
+        <Data AD_Column_ID="6767" Column="AD_Message_ID">523955</Data>
+        <Data AD_Column_ID="341" Column="AD_Language">es_MX</Data>
+        <Data AD_Column_ID="342" Column="MsgText">Visita</Data>
+        <Data AD_Column_ID="343" Column="MsgTip" isNewNull="true"/>
+        <Data AD_Column_ID="344" Column="IsTranslated">true</Data>
+        <Data AD_Column_ID="1192" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="1193" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="608" Column="IsActive">true</Data>
+        <Data AD_Column_ID="609" Column="Created">2026-11-11 17:00:00.000</Data>
+        <Data AD_Column_ID="610" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="611" Column="Updated">2026-11-11 17:00:00.000</Data>
+        <Data AD_Column_ID="612" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="84347" Column="UUID">d4a1b622-4369-4d43-a81a-8b829e933f8e</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="30" StepType="AD">
+      <PO AD_Table_ID="109" Action="I" Record_ID="523956" Table="AD_Message">
+        <Data AD_Column_ID="6765" Column="AD_Message_ID">523956</Data>
+        <Data AD_Column_ID="6766" Column="Value">PlannerPushAssignedTitle</Data>
+        <Data AD_Column_ID="198" Column="MsgText">New visit assigned</Data>
+        <Data AD_Column_ID="199" Column="MsgTip" isNewNull="true"/>
+        <Data AD_Column_ID="197" Column="MsgType">I</Data>
+        <Data AD_Column_ID="7716" Column="EntityType">D</Data>
+        <Data AD_Column_ID="391" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="392" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="588" Column="IsActive">true</Data>
+        <Data AD_Column_ID="589" Column="Created">2026-11-11 17:00:00.000</Data>
+        <Data AD_Column_ID="590" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="591" Column="Updated">2026-11-11 17:00:00.000</Data>
+        <Data AD_Column_ID="592" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="84346" Column="UUID">5d332062-288b-4843-ae1a-811ec698a530</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="40" StepType="AD">
+      <PO AD_Table_ID="119" Action="I" Record_ID="523956" Table="AD_Message_Trl">
+        <Data AD_Column_ID="6767" Column="AD_Message_ID">523956</Data>
+        <Data AD_Column_ID="341" Column="AD_Language">es_MX</Data>
+        <Data AD_Column_ID="342" Column="MsgText">Nueva visita asignada</Data>
+        <Data AD_Column_ID="343" Column="MsgTip" isNewNull="true"/>
+        <Data AD_Column_ID="344" Column="IsTranslated">true</Data>
+        <Data AD_Column_ID="1192" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="1193" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="608" Column="IsActive">true</Data>
+        <Data AD_Column_ID="609" Column="Created">2026-11-11 17:00:00.000</Data>
+        <Data AD_Column_ID="610" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="611" Column="Updated">2026-11-11 17:00:00.000</Data>
+        <Data AD_Column_ID="612" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="84347" Column="UUID">11e82a3b-8510-461d-a0db-718f75832485</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="50" StepType="AD">
+      <PO AD_Table_ID="109" Action="I" Record_ID="523957" Table="AD_Message">
+        <Data AD_Column_ID="6765" Column="AD_Message_ID">523957</Data>
+        <Data AD_Column_ID="6766" Column="Value">PlannerPushAssignedBatchTitle</Data>
+        <Data AD_Column_ID="198" Column="MsgText">New visits assigned</Data>
+        <Data AD_Column_ID="199" Column="MsgTip" isNewNull="true"/>
+        <Data AD_Column_ID="197" Column="MsgType">I</Data>
+        <Data AD_Column_ID="7716" Column="EntityType">D</Data>
+        <Data AD_Column_ID="391" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="392" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="588" Column="IsActive">true</Data>
+        <Data AD_Column_ID="589" Column="Created">2026-11-11 17:00:00.000</Data>
+        <Data AD_Column_ID="590" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="591" Column="Updated">2026-11-11 17:00:00.000</Data>
+        <Data AD_Column_ID="592" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="84346" Column="UUID">89e96dda-abae-4be4-ab82-fdaa799bba4b</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="60" StepType="AD">
+      <PO AD_Table_ID="119" Action="I" Record_ID="523957" Table="AD_Message_Trl">
+        <Data AD_Column_ID="6767" Column="AD_Message_ID">523957</Data>
+        <Data AD_Column_ID="341" Column="AD_Language">es_MX</Data>
+        <Data AD_Column_ID="342" Column="MsgText">Nuevas visitas asignadas</Data>
+        <Data AD_Column_ID="343" Column="MsgTip" isNewNull="true"/>
+        <Data AD_Column_ID="344" Column="IsTranslated">true</Data>
+        <Data AD_Column_ID="1192" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="1193" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="608" Column="IsActive">true</Data>
+        <Data AD_Column_ID="609" Column="Created">2026-11-11 17:00:00.000</Data>
+        <Data AD_Column_ID="610" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="611" Column="Updated">2026-11-11 17:00:00.000</Data>
+        <Data AD_Column_ID="612" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="84347" Column="UUID">344f8ed6-16d3-489e-adb2-16c8b2bafc88</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="70" StepType="AD">
+      <PO AD_Table_ID="109" Action="I" Record_ID="523958" Table="AD_Message">
+        <Data AD_Column_ID="6765" Column="AD_Message_ID">523958</Data>
+        <Data AD_Column_ID="6766" Column="Value">PlannerPushAssignedBatchBody</Data>
+        <Data AD_Column_ID="198" Column="MsgText">{0} visits were assigned to you starting {1}</Data>
+        <Data AD_Column_ID="199" Column="MsgTip" isNewNull="true"/>
+        <Data AD_Column_ID="197" Column="MsgType">I</Data>
+        <Data AD_Column_ID="7716" Column="EntityType">D</Data>
+        <Data AD_Column_ID="391" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="392" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="588" Column="IsActive">true</Data>
+        <Data AD_Column_ID="589" Column="Created">2026-11-11 17:00:00.000</Data>
+        <Data AD_Column_ID="590" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="591" Column="Updated">2026-11-11 17:00:00.000</Data>
+        <Data AD_Column_ID="592" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="84346" Column="UUID">90649863-7c2d-4ad5-a733-93fe9a32969b</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="80" StepType="AD">
+      <PO AD_Table_ID="119" Action="I" Record_ID="523958" Table="AD_Message_Trl">
+        <Data AD_Column_ID="6767" Column="AD_Message_ID">523958</Data>
+        <Data AD_Column_ID="341" Column="AD_Language">es_MX</Data>
+        <Data AD_Column_ID="342" Column="MsgText">Se te asignaron {0} visitas desde el {1}</Data>
+        <Data AD_Column_ID="343" Column="MsgTip" isNewNull="true"/>
+        <Data AD_Column_ID="344" Column="IsTranslated">true</Data>
+        <Data AD_Column_ID="1192" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="1193" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="608" Column="IsActive">true</Data>
+        <Data AD_Column_ID="609" Column="Created">2026-11-11 17:00:00.000</Data>
+        <Data AD_Column_ID="610" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="611" Column="Updated">2026-11-11 17:00:00.000</Data>
+        <Data AD_Column_ID="612" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="84347" Column="UUID">dfc1c395-97c2-4fde-b9aa-369f0d3342e7</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="90" StepType="AD">
+      <PO AD_Table_ID="109" Action="I" Record_ID="523959" Table="AD_Message">
+        <Data AD_Column_ID="6765" Column="AD_Message_ID">523959</Data>
+        <Data AD_Column_ID="6766" Column="Value">PlannerPushRemovedTitle</Data>
+        <Data AD_Column_ID="198" Column="MsgText">Visit removed</Data>
+        <Data AD_Column_ID="199" Column="MsgTip" isNewNull="true"/>
+        <Data AD_Column_ID="197" Column="MsgType">I</Data>
+        <Data AD_Column_ID="7716" Column="EntityType">D</Data>
+        <Data AD_Column_ID="391" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="392" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="588" Column="IsActive">true</Data>
+        <Data AD_Column_ID="589" Column="Created">2026-11-11 17:00:00.000</Data>
+        <Data AD_Column_ID="590" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="591" Column="Updated">2026-11-11 17:00:00.000</Data>
+        <Data AD_Column_ID="592" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="84346" Column="UUID">bf1c87e7-57e0-4259-83ab-ef65f916462f</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="100" StepType="AD">
+      <PO AD_Table_ID="119" Action="I" Record_ID="523959" Table="AD_Message_Trl">
+        <Data AD_Column_ID="6767" Column="AD_Message_ID">523959</Data>
+        <Data AD_Column_ID="341" Column="AD_Language">es_MX</Data>
+        <Data AD_Column_ID="342" Column="MsgText">Visita removida</Data>
+        <Data AD_Column_ID="343" Column="MsgTip" isNewNull="true"/>
+        <Data AD_Column_ID="344" Column="IsTranslated">true</Data>
+        <Data AD_Column_ID="1192" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="1193" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="608" Column="IsActive">true</Data>
+        <Data AD_Column_ID="609" Column="Created">2026-11-11 17:00:00.000</Data>
+        <Data AD_Column_ID="610" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="611" Column="Updated">2026-11-11 17:00:00.000</Data>
+        <Data AD_Column_ID="612" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="84347" Column="UUID">d5b59ca9-dddd-451a-959c-23543d4b0965</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="110" StepType="AD">
+      <PO AD_Table_ID="109" Action="I" Record_ID="523960" Table="AD_Message">
+        <Data AD_Column_ID="6765" Column="AD_Message_ID">523960</Data>
+        <Data AD_Column_ID="6766" Column="Value">PlannerPushRemovedBody</Data>
+        <Data AD_Column_ID="198" Column="MsgText">{0} · {1} is no longer in your plan</Data>
+        <Data AD_Column_ID="199" Column="MsgTip" isNewNull="true"/>
+        <Data AD_Column_ID="197" Column="MsgType">I</Data>
+        <Data AD_Column_ID="7716" Column="EntityType">D</Data>
+        <Data AD_Column_ID="391" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="392" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="588" Column="IsActive">true</Data>
+        <Data AD_Column_ID="589" Column="Created">2026-11-11 17:00:00.000</Data>
+        <Data AD_Column_ID="590" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="591" Column="Updated">2026-11-11 17:00:00.000</Data>
+        <Data AD_Column_ID="592" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="84346" Column="UUID">4df78a06-3a37-4946-b586-3c3b1ffbcee7</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="120" StepType="AD">
+      <PO AD_Table_ID="119" Action="I" Record_ID="523960" Table="AD_Message_Trl">
+        <Data AD_Column_ID="6767" Column="AD_Message_ID">523960</Data>
+        <Data AD_Column_ID="341" Column="AD_Language">es_MX</Data>
+        <Data AD_Column_ID="342" Column="MsgText">{0} · {1} ya no está en tu plan</Data>
+        <Data AD_Column_ID="343" Column="MsgTip" isNewNull="true"/>
+        <Data AD_Column_ID="344" Column="IsTranslated">true</Data>
+        <Data AD_Column_ID="1192" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="1193" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="608" Column="IsActive">true</Data>
+        <Data AD_Column_ID="609" Column="Created">2026-11-11 17:00:00.000</Data>
+        <Data AD_Column_ID="610" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="611" Column="Updated">2026-11-11 17:00:00.000</Data>
+        <Data AD_Column_ID="612" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="84347" Column="UUID">1534c712-21d8-4d76-80fb-b95419ad613c</Data>
+      </PO>
+    </Step>
+  </Migration>
+</Migrations>
