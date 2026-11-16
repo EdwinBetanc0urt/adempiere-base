@@ -86,6 +86,7 @@ public class MPaymentProcessor extends X_C_PaymentProcessor {
 				.setParameters(parameters)
 				.setClient_ID()
 				.setOnlyActiveRecords(true)
+				.setOrderBy(COLUMNNAME_C_PaymentProcessor_ID)
 				.list();
 		//
 		if (list.isEmpty()) {
@@ -100,6 +101,80 @@ public class MPaymentProcessor extends X_C_PaymentProcessor {
 
 	/**	Static Logger	*/
 	private static CLogger	s_log	= CLogger.getCLogger (MPaymentProcessor.class);
+
+	/**	Store Payment Method (terminal) table	*/
+	public static final String TABLENAME_C_PaymentMethod = "C_PaymentMethod";
+	/**	Payment Processor Run table	*/
+	public static final String TABLENAME_C_PaymentProcessorRun = "C_PaymentProcessorRun";
+
+	/**
+	 * Validate if a table has the C_PaymentProcessor_ID column
+	 * @param tableName table name
+	 * @return true if the column exists
+	 */
+	public static boolean isPaymentProcessorColumnAvailable(String tableName) {
+		return MColumn.getColumn_ID(tableName, COLUMNNAME_C_PaymentProcessor_ID) > 0;
+	}
+
+	/**
+	 * Get Payment Processor defined for a store payment method (terminal)
+	 * @param ctx context
+	 * @param paymentMethodId store payment method
+	 * @param trxName transaction
+	 * @return active processor or null
+	 */
+	public static MPaymentProcessor getFromPaymentMethod(Properties ctx, int paymentMethodId, String trxName) {
+		if (paymentMethodId <= 0 || !isPaymentProcessorColumnAvailable(TABLENAME_C_PaymentMethod)) {
+			return null;
+		}
+		int paymentProcessorId = DB.getSQLValue(trxName,
+				"SELECT C_PaymentProcessor_ID FROM C_PaymentMethod WHERE C_PaymentMethod_ID = ?", paymentMethodId);
+		return getActive(ctx, paymentProcessorId, trxName);
+	}
+
+	/**
+	 * Get Payment Processor defined for payment: first the processor saved on payment,
+	 * after the processor of store payment method (terminal)
+	 * @param payment payment
+	 * @return processor or null when it is not defined
+	 */
+	public static MPaymentProcessor getDefinedForPayment(MPayment payment) {
+		if (payment == null) {
+			return null;
+		}
+		if (payment.get_ColumnIndex(COLUMNNAME_C_PaymentProcessor_ID) >= 0) {
+			MPaymentProcessor paymentProcessor = getActive(payment.getCtx(),
+					payment.get_ValueAsInt(COLUMNNAME_C_PaymentProcessor_ID), payment.get_TrxName());
+			if (paymentProcessor != null) {
+				return paymentProcessor;
+			}
+		}
+		return getFromPaymentMethod(payment.getCtx(), payment.getC_PaymentMethod_ID(), payment.get_TrxName());
+	}
+
+	/**
+	 * Set Payment Processor on a record (payment, processor run) when the column exists
+	 * @param entity record
+	 * @param paymentProcessorId processor
+	 */
+	public static void setPaymentProcessorId(PO entity, int paymentProcessorId) {
+		if (entity == null || paymentProcessorId <= 0
+				|| entity.get_ColumnIndex(COLUMNNAME_C_PaymentProcessor_ID) < 0) {
+			return;
+		}
+		entity.set_ValueOfColumn(COLUMNNAME_C_PaymentProcessor_ID, paymentProcessorId);
+	}
+
+	private static MPaymentProcessor getActive(Properties ctx, int paymentProcessorId, String trxName) {
+		if (paymentProcessorId <= 0) {
+			return null;
+		}
+		MPaymentProcessor paymentProcessor = new MPaymentProcessor(ctx, paymentProcessorId, trxName);
+		if (paymentProcessor.getC_PaymentProcessor_ID() <= 0 || !paymentProcessor.isActive()) {
+			return null;
+		}
+		return paymentProcessor;
+	}
 
 	
 	/**************************************************************************
