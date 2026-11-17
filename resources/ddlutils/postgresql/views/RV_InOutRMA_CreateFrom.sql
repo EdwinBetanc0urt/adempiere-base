@@ -4,7 +4,7 @@ SELECT l.AD_Client_ID, l.AD_Org_ID, l.CreatedBy, l.Created, l.UpdatedBy, l.Updat
 ((CASE WHEN l.QtyOrdered = 0 THEN 0 ELSE l.QtyEntered / l.QtyOrdered END) * (l.QtyOrdered - SUM(COALESCE(iol.MovementQty, 0)))) QtyEntered,
 l.C_UOM_ID, (l.QtyOrdered - SUM(COALESCE(iol.MovementQty, 0))) MovementQty,
 (CASE WHEN l.QtyOrdered = 0 THEN 0 ELSE l.QtyEntered / l.QtyOrdered END) Multiplier,
-COALESCE(p.Name, c.Name) AS Name, l.M_Product_ID, l.M_AttributeSetInstance_ID, l.C_Charge_ID, l.Description, po.VendorProductNo,
+COALESCE(p.Name, c.Name) AS Name, p.Value AS ProductValue, l.M_Product_ID, l.M_AttributeSetInstance_ID, l.C_Charge_ID, l.Description, po.VendorProductNo,
 -- Reference
 o.C_Order_ID, NULL::NUMERIC(10, 0) AS C_Invoice_ID, NULL::NUMERIC(10, 0) AS M_InOut_ID, NULL::NUMERIC(10, 0) AS M_RMA_ID, o.DateOrdered AS DateDoc, o.C_BPartner_ID, o.DocStatus
 FROM C_Order o
@@ -28,7 +28,7 @@ LEFT JOIN (SELECT iol_sub.C_OrderLine_ID, iol_sub.MovementQty
                 AND iol_sub.C_OrderLine_ID IS NOT NULL) iol ON(iol.C_OrderLine_ID = l.C_OrderLine_ID)
 WHERE l.QtyOrdered <> 0
 GROUP BY l.AD_Client_ID, l.AD_Org_ID, l.CreatedBy, l.Created, l.UpdatedBy, l.Updated, l.IsActive, l.C_OrderLine_ID, l.Line,
-l.QtyOrdered, l.QtyEntered, l.C_UOM_ID, p.Name, c.Name, l.M_Product_ID,
+l.QtyOrdered, l.QtyEntered, l.C_UOM_ID, p.Name, p.Value, c.Name, l.M_Product_ID,
 l.M_AttributeSetInstance_ID, l.C_Charge_ID, l.Description, po.VendorProductNo,
 o.C_Order_ID, o.DateOrdered, o.C_BPartner_ID, o.DocStatus
 HAVING(l.QtyOrdered - SUM(COALESCE(iol.MovementQty, 0)) <> 0);
