@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <Migrations>
-  <Migration EntityType="D" Name="Add_ProductValue_to_Return_CreateFrom_Order_Browse" ReleaseNo="4.2.0" SeqNo="504980">
+  <Migration EntityType="D" Name="Add_ProductValue_to_Return_CreateFrom_Order_Browse" ReleaseNo="4.2.1" SeqNo="504980">
     <Comments>Add Product Key column to Material Return Create From Return Order browse</Comments>
     <Step DBType="Postgres" Parse="Y" SeqNo="10" StepType="SQL">
       <SQLStatement>DROP VIEW IF EXISTS RV_InOutRMA_CreateFrom;
