@@ -79,6 +79,34 @@ public class X_C_ProjectIssueMA extends PO implements I_C_ProjectIssueMA, I_Pers
       return sb.toString();
     }
 
+	public org.adempiere.core.domains.models.I_C_Project getC_Project() throws RuntimeException
+    {
+		return (org.adempiere.core.domains.models.I_C_Project)MTable.get(getCtx(), org.adempiere.core.domains.models.I_C_Project.Table_Name)
+			.getPO(getC_Project_ID(), get_TrxName());	}
+
+	/** Set Project.
+		@param C_Project_ID 
+		Financial Project
+	  */
+	public void setC_Project_ID (int C_Project_ID)
+	{
+		if (C_Project_ID < 1) 
+			set_Value (COLUMNNAME_C_Project_ID, null);
+		else 
+			set_Value (COLUMNNAME_C_Project_ID, Integer.valueOf(C_Project_ID));
+	}
+
+	/** Get Project.
+		@return Financial Project
+	  */
+	public int getC_Project_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_C_Project_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
 	public org.adempiere.core.domains.models.I_C_ProjectIssue getC_ProjectIssue() throws RuntimeException
     {
 		return (org.adempiere.core.domains.models.I_C_ProjectIssue)MTable.get(getCtx(), org.adempiere.core.domains.models.I_C_ProjectIssue.Table_Name)
@@ -102,6 +130,29 @@ public class X_C_ProjectIssueMA extends PO implements I_C_ProjectIssueMA, I_Pers
 	public int getC_ProjectIssue_ID () 
 	{
 		Integer ii = (Integer)get_Value(COLUMNNAME_C_ProjectIssue_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
+	/** Set Project Issue Allocation.
+		@param C_ProjectIssueMA_ID 
+		Material allocation of the line by attribute set instance
+	  */
+	public void setC_ProjectIssueMA_ID (int C_ProjectIssueMA_ID)
+	{
+		if (C_ProjectIssueMA_ID < 1) 
+			set_ValueNoCheck (COLUMNNAME_C_ProjectIssueMA_ID, null);
+		else 
+			set_ValueNoCheck (COLUMNNAME_C_ProjectIssueMA_ID, Integer.valueOf(C_ProjectIssueMA_ID));
+	}
+
+	/** Get Project Issue Allocation.
+		@return Material allocation of the line by attribute set instance
+	  */
+	public int getC_ProjectIssueMA_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_C_ProjectIssueMA_ID);
 		if (ii == null)
 			 return 0;
 		return ii.intValue();

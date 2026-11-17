@@ -18,6 +18,7 @@ package org.compiere.model;
 
 import org.adempiere.core.domains.models.X_M_MovementLine;
 import org.adempiere.engine.IDocumentLine;
+import org.adempiere.engine.ManualAllocation;
 import org.adempiere.exceptions.AdempiereException;
 import org.compiere.process.DocumentReversalLineEnable;
 import org.compiere.util.DB;
@@ -214,7 +215,10 @@ public class MMovementLine extends X_M_MovementLine implements IDocumentLine , D
 		
 		//      Mandatory Instance
 		MProduct product = getProduct();
-		MAttributeSet.validateAttributeSetInstanceMandatory(product, Table_ID , isSOTrx() , getM_AttributeSetInstance_ID());
+		//	With manual allocation the instances are in the allocations (M_MovementLineMA)
+		boolean isManualAllocation = ManualAllocation.isManualAllocation(this);
+		if (!isManualAllocation)
+			MAttributeSet.validateAttributeSetInstanceMandatory(product, Table_ID , isSOTrx() , getM_AttributeSetInstance_ID());
 		/*if (getM_AttributeSetInstance_ID() == 0) {
 			if (product != null && product.isASIMandatory(false, getAD_Org_ID())) {
 				log.saveError("FillMandatory", Msg.getElement(getCtx(), COLUMNNAME_M_AttributeSetInstance_ID));
@@ -229,7 +233,8 @@ public class MMovementLine extends X_M_MovementLine implements IDocumentLine , D
 				if (getM_AttributeSetInstance_ID() != 0)        //set to from
 					setM_AttributeSetInstanceTo_ID(getM_AttributeSetInstance_ID());
 			}
-			MAttributeSet.validateAttributeSetInstanceMandatory(product, Table_ID , isSOTrx() , getM_AttributeSetInstanceTo_ID());
+			if (!isManualAllocation)
+				MAttributeSet.validateAttributeSetInstanceMandatory(product, Table_ID , isSOTrx() , getM_AttributeSetInstanceTo_ID());
 			/*if (product != null && product.isASIMandatory(true, getAD_Org_ID()) && getM_AttributeSetInstanceTo_ID() == 0)
 			{
 				log.saveError("FillMandatory", Msg.getElement(getCtx(), COLUMNNAME_M_AttributeSetInstanceTo_ID));
@@ -405,7 +410,7 @@ public class MMovementLine extends X_M_MovementLine implements IDocumentLine , D
 	{
 		StringBuilder whereClause = new StringBuilder();
 		whereClause.append(MMovementLineMA.COLUMNNAME_M_MovementLine_ID).append("=?");
-		return new Query(getCtx(), MMovementLineMA.Table_Name , whereClause.toString() , get_TableName())
+		return new Query(getCtx(), MMovementLineMA.Table_Name , whereClause.toString() , get_TrxName())
 				.setClient_ID()
 				.setParameters(getM_MovementLine_ID())
 				.setOrderBy(MMovementLineMA.COLUMNNAME_Created)

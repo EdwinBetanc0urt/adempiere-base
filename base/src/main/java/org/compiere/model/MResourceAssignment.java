@@ -78,7 +78,8 @@ public class MResourceAssignment extends X_S_ResourceAssignment
 	@Override
 	protected boolean beforeSave (boolean newRecord)
 	{
-		if (newRecord || is_ValueChanged(COLUMNNAME_AssignDateFrom) || is_ValueChanged(COLUMNNAME_AssignDateTo) || is_ValueChanged(COLUMNNAME_S_Resource_ID)) {
+		if (validatesAvailability()
+				&& (newRecord || is_ValueChanged(COLUMNNAME_AssignDateFrom) || is_ValueChanged(COLUMNNAME_AssignDateTo) || is_ValueChanged(COLUMNNAME_S_Resource_ID))) {
 			String whereClause = " ? < AssignDateTo " +
 					" AND ? > AssignDateFrom " +
 					" AND S_Resource_ID = ?" +
@@ -102,6 +103,21 @@ public class MResourceAssignment extends X_S_ResourceAssignment
 		}
 		return super.beforeSave(newRecord);
 	}	//	beforeSave
+
+	/**
+	 * 	Does the resource type of this assignment validate availability?
+	 * 	Resource types marked as not validating availability (IsValidateAvailability = N)
+	 * 	allow overlapping assignments of the same resource (unlimited resources).
+	 *	@return true unless the resource type explicitly disables availability validation
+	 */
+	private boolean validatesAvailability()
+	{
+		MResource resource = (MResource) getS_Resource();
+		if (resource == null || resource.getS_ResourceType_ID() <= 0)
+			return true;
+		MResourceType resourceType = MResourceType.get(getCtx(), resource.getS_ResourceType_ID());
+		return resourceType == null || resourceType.isValidateAvailability();
+	}	//	validatesAvailability
 	
 	
 	/**

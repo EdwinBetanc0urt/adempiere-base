@@ -637,7 +637,7 @@ public class MProjectLine extends X_C_ProjectLine
 			if (!isSOTrx)
 				recalculateCostReceived(newAmtQty);
 		} else if (MProjectIssue.Table_Name.equals(tableName)) {
-			recalculateIssue();
+			recalculateIssue(newAmtQty);
 		}
 	}	//	recalculateFromDocument
 
@@ -717,16 +717,17 @@ public class MProjectLine extends X_C_ProjectLine
 	 *	Realized via Project Issue: Delivered (sale) and Consumed (cost). The issue stores no price,
 	 *	so the amount comes from the line's own PlannedPrice / Cost. Updates ProfitRealizedAmt.
 	 */
-	private void recalculateIssue()
+	private void recalculateIssue(BigDecimal[] newAmtQty)
 	{
-		BigDecimal issuedQty = Env.ZERO;
-		if (getC_ProjectIssue_ID() > 0) {
-			issuedQty = DB.getSQLValueBD(get_TrxName(),
-				"SELECT COALESCE(SUM(pi.MovementQty),0) FROM " + MProjectIssue.Table_Name + " pi "
-				+ "WHERE pi.C_ProjectIssue_ID=? AND pi.Processed='Y'", getC_ProjectIssue_ID());
-			if (issuedQty == null)
-				issuedQty = Env.ZERO;
-		}
+		//	Issues linked to this line plus the issue directly referenced by the line
+		BigDecimal issuedQty = DB.getSQLValueBD(get_TrxName(),
+			"SELECT COALESCE(SUM(pi.MovementQty),0) FROM " + MProjectIssue.Table_Name + " pi "
+			+ "WHERE pi.Processed='Y' AND (pi.C_ProjectLine_ID=? OR pi.C_ProjectIssue_ID=?)",
+			getC_ProjectLine_ID(), getC_ProjectIssue_ID());
+		if (issuedQty == null)
+			issuedQty = Env.ZERO;
+		if (newAmtQty != null && newAmtQty.length > 1 && newAmtQty[1] != null)
+			issuedQty = issuedQty.add(newAmtQty[1]);
 		setQtyDelivered(issuedQty);
 		setDeliveredAmt(issuedQty.multiply(getPlannedPrice()));
 		setCostConsumedQty(issuedQty);

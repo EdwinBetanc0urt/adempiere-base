@@ -108,6 +108,21 @@ public interface I_M_MovementLineMA
 
 	public I_M_AttributeSetInstance getM_AttributeSetInstance() throws RuntimeException;
 
+    /** Column name M_Movement_ID */
+    public static final String COLUMNNAME_M_Movement_ID = "M_Movement_ID";
+
+	/** Set Inventory Move.
+	  * Movement of Inventory
+	  */
+	public void setM_Movement_ID (int M_Movement_ID);
+
+	/** Get Inventory Move.
+	  * Movement of Inventory
+	  */
+	public int getM_Movement_ID();
+
+	public org.adempiere.core.domains.models.I_M_Movement getM_Movement() throws RuntimeException;
+
     /** Column name M_MovementLine_ID */
     public static final String COLUMNNAME_M_MovementLine_ID = "M_MovementLine_ID";
 
@@ -122,6 +137,19 @@ public interface I_M_MovementLineMA
 	public int getM_MovementLine_ID();
 
 	public org.adempiere.core.domains.models.I_M_MovementLine getM_MovementLine() throws RuntimeException;
+
+    /** Column name M_MovementLineMA_ID */
+    public static final String COLUMNNAME_M_MovementLineMA_ID = "M_MovementLineMA_ID";
+
+	/** Set Move Line Allocation.
+	  * Material allocation of the line by attribute set instance
+	  */
+	public void setM_MovementLineMA_ID (int M_MovementLineMA_ID);
+
+	/** Get Move Line Allocation.
+	  * Material allocation of the line by attribute set instance
+	  */
+	public int getM_MovementLineMA_ID();
 
     /** Column name MovementQty */
     public static final String COLUMNNAME_MovementQty = "MovementQty";

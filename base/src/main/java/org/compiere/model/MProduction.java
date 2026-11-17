@@ -19,6 +19,7 @@ import org.adempiere.core.domains.models.I_M_ProductionLine;
 import org.adempiere.core.domains.models.X_M_Production;
 import org.adempiere.core.domains.models.X_PP_Product_BOM;
 import org.adempiere.core.domains.models.X_PP_Product_BOMLine;
+import org.adempiere.engine.ManualAllocation;
 import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.exceptions.PeriodClosedException;
 import org.compiere.process.DocAction;
@@ -283,10 +284,12 @@ public class MProduction extends X_M_Production implements DocAction , DocumentR
 				if (productionLine.getM_AttributeSetInstance_ID() == 0) {
 					MProductionLineMA[]  list = MProductionLineMA.get(getCtx(),
 							productionLine.getM_ProductionLine_ID(), get_TrxName());
+					//	Automatic allocations have the opposite sign of the line, manual ones the same sign
+					boolean isManualAllocation = ManualAllocation.isManualAllocation(productionLine);
 					for (MProductionLineMA ma:list) {
 						if (productionLine.getM_AttributeSetInstance_ID() !=0 && productionLine.getM_AttributeSetInstance_ID() != ma.getM_AttributeSetInstance_ID())
 							continue;
-						BigDecimal quantityMA = ma.getMovementQty();
+						BigDecimal quantityMA = isManualAllocation ? ma.getMovementQty().negate() : ma.getMovementQty();
 						//Parameters: ctx,M_Warehouse_ID, M_Locator_ID, M_Product_ID,M_AttributeSetInstance_ID, reservationAttributeSetInstance_ID,
 						//diffQtyOnHand, 	diffQtyReserved, diffQtyOrdered, trxName
 //						MStorage.add(getCtx(), locator.getM_Warehouse_ID(),
@@ -299,7 +302,8 @@ public class MProduction extends X_M_Production implements DocAction , DocumentR
 									.withProductionLine(productionLine, ma.getM_AttributeSetInstance_ID(), quantityMA)
 									.build();
 							MProductionBatchLine pbLine = MProductionBatchLine.getbyProduct(getM_ProductionBatch_ID(), productionLine.getM_Product_ID(), getCtx(), get_TrxName());
-							BigDecimal quantityReserved = productionLine.getMovementQty();
+							//	Only the quantity of this lot (the line quantity was added once by each lot)
+							BigDecimal quantityReserved = quantityMA.negate();
 							pbLine.setQtyReserved(pbLine.getQtyReserved().add(quantityReserved));
 							pbLine.saveEx();
 						}
@@ -1010,6 +1014,12 @@ public class MProduction extends X_M_Production implements DocAction , DocumentR
 	 */
 	public void checkMaterialPolicy(MProductionLine pLine, String MovementType)
 	{
+		//	Manual allocation: validate and keep the allocations entered by the user
+		if (ManualAllocation.isManualAllocation(pLine)) {
+			ManualAllocation.validate(pLine, pLine.getM_Product_ID(), pLine.getM_AttributeSetInstance_ID(), pLine.getMovementQty(),
+					Arrays.asList(MProductionLineMA.get(getCtx(), pLine.getM_ProductionLine_ID(), get_TrxName())));
+			return;
+		}
 		int no = pLine.deleteMA();
 		if (no > 0)
 			log.config("Delete old #" + no);

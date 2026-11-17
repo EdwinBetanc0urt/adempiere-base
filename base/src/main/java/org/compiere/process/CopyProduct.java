@@ -238,6 +238,7 @@ public class CopyProduct extends SvrProcess {
 			acctDst.setM_Product_ID(toMProductID);
 			acctDst.setP_Asset_Acct(acctSrc.getP_Asset_Acct());
 			acctDst.setP_AverageCostVariance_Acct(acctSrc.getP_AverageCostVariance_Acct());
+			acctDst.setP_LandedCostClearing_Acct(acctSrc.getP_LandedCostClearing_Acct());
 			acctDst.setP_Burden_Acct(acctSrc.getP_Burden_Acct());
 			acctDst.setP_COGS_Acct(acctSrc.getP_COGS_Acct());
 			acctDst.setP_CostAdjustment_Acct(acctSrc.getP_CostAdjustment_Acct());

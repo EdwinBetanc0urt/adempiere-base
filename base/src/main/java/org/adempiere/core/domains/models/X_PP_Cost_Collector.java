@@ -534,6 +534,30 @@ public class X_PP_Cost_Collector extends PO implements I_PP_Cost_Collector, I_Pe
 		return false;
 	}
 
+	/** Set Manual Allocation.
+		@param IsManualAllocation 
+		The material allocation (attribute set instances) of the line is entered manually and kept when the document is completed
+	  */
+	public void setIsManualAllocation (boolean IsManualAllocation)
+	{
+		set_Value (COLUMNNAME_IsManualAllocation, Boolean.valueOf(IsManualAllocation));
+	}
+
+	/** Get Manual Allocation.
+		@return The material allocation (attribute set instances) of the line is entered manually and kept when the document is completed
+	  */
+	public boolean isManualAllocation () 
+	{
+		Object oo = get_Value(COLUMNNAME_IsManualAllocation);
+		if (oo != null) 
+		{
+			 if (oo instanceof Boolean) 
+				 return ((Boolean)oo).booleanValue(); 
+			return "Y".equals(oo);
+		}
+		return false;
+	}
+
 	/** Set Is Subcontracting.
 		@param IsSubcontracting Is Subcontracting	  */
 	public void setIsSubcontracting (boolean IsSubcontracting)

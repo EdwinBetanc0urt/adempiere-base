@@ -24,4 +24,4 @@ BEGIN
 	       bomQtyReservedASI(Product_ID, AttributeSetInstance_ID, Warehouse_ID, Locator_ID);
 END;
 $BODY$
-  LANGUAGE 'plpgsql' ;
+  LANGUAGE plpgsql STABLE ;

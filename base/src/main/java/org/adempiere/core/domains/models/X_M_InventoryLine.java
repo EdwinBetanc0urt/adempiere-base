@@ -447,6 +447,30 @@ public class X_M_InventoryLine extends PO implements I_M_InventoryLine, I_Persis
 		return (String)get_Value(COLUMNNAME_InventoryType);
 	}
 
+	/** Set Manual Allocation.
+		@param IsManualAllocation 
+		The material allocation (attribute set instances) of the line is entered manually and kept when the document is completed
+	  */
+	public void setIsManualAllocation (boolean IsManualAllocation)
+	{
+		set_Value (COLUMNNAME_IsManualAllocation, Boolean.valueOf(IsManualAllocation));
+	}
+
+	/** Get Manual Allocation.
+		@return The material allocation (attribute set instances) of the line is entered manually and kept when the document is completed
+	  */
+	public boolean isManualAllocation () 
+	{
+		Object oo = get_Value(COLUMNNAME_IsManualAllocation);
+		if (oo != null) 
+		{
+			 if (oo instanceof Boolean) 
+				 return ((Boolean)oo).booleanValue(); 
+			return "Y".equals(oo);
+		}
+		return false;
+	}
+
 	/** Set Line No.
 		@param Line 
 		Unique line for this document

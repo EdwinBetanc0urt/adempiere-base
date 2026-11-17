@@ -9,6 +9,7 @@ import org.compiere.model.MMigrationData;
 import org.compiere.model.MMigrationStep;
 import org.compiere.util.CLogger;
 import org.compiere.util.Env;
+import org.compiere.util.Trx;
 import org.spin.util.XMLUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -24,10 +25,12 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
 import java.io.FileWriter;
-import java.util.HashMap;
+import java.sql.SQLException;
+import java.sql.Savepoint;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -41,6 +44,17 @@ public class XMLMigration implements IMigrationManagement {
 
 	private final DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 	private final CLogger log = CLogger.getCLogger(this.getClass());
+	/**	The factory is not thread safe and files are loaded in parallel: one builder per thread, created from the
+	 * 	configured factory (namespaces, whitespace, secure features) only while holding its lock	*/
+	private final ThreadLocal<DocumentBuilder> documentBuilder = ThreadLocal.withInitial(() -> {
+		synchronized (dbf) {
+			try {
+				return dbf.newDocumentBuilder();
+			} catch (Exception e) {
+				throw new AdempiereException(e);
+			}
+		}
+	});
 
 	public XMLMigration() {
 		dbf.setNamespaceAware(true);
@@ -91,7 +105,9 @@ public class XMLMigration implements IMigrationManagement {
 		if(files == null || files.isEmpty()) {
 			return List.of();
 		}
-		Map<String, Integer> migrationsToApply = new HashMap<>();
+		//	Files are loaded in parallel: the map must be thread safe or entries are lost
+		Map<String, Integer> migrationsToApply = new ConcurrentHashMap<>();
+		long start = System.currentTimeMillis();
 		files.parallelStream().forEach(file ->{
 			try {
 				int migrationId = loadFile(file, finder);
@@ -99,9 +115,13 @@ public class XMLMigration implements IMigrationManagement {
 					migrationsToApply.put(file.getAbsolutePath(), migrationId);
 				}
 			} catch (Exception e) {
-				log.log(Level.SEVERE, e.getLocalizedMessage());
+				log.log(Level.SEVERE, "Error loading " + file + ": " + e.getLocalizedMessage(), e);
 			}
 		});
+		//	Measure of the import: compare it between versions on the same database
+		log.log(Level.INFO, "Imported migrations=" + migrationsToApply.size() + " files=" + files.size()
+				+ " threads=" + java.util.concurrent.ForkJoinPool.getCommonPoolParallelism()
+				+ " elapsed=" + (System.currentTimeMillis() - start) + "ms");
 		return migrationsToApply.keySet().stream()
 				.sorted()
 				.map(migrationsToApply::get)
@@ -115,18 +135,26 @@ public class XMLMigration implements IMigrationManagement {
 				return -1;
 			}
 			log.log(Level.CONFIG, "Loading file: " + file);
-			Document doc = dbf.newDocumentBuilder().parse(file);
+			DocumentBuilder builder = documentBuilder.get();
+			builder.reset();
+			Document doc = builder.parse(file);
 			NodeList migrations = doc.getDocumentElement().getElementsByTagName("Migration");
 			if(migrations.getLength() > 0) {
 				Element element = (Element) migrations.item(0);
 				Properties ctx = Env.getCtx();
 				try {
-					MMigration migration = saveMigrationFromXmlNode(ctx, element, finder);
-					if(migration != null) {
-						migrationReferenceId.set(migration.getAD_Migration_ID());
-					}
+					//	The migration, its steps and their data are saved in one transaction: when any of them
+					//	fails nothing is registered, instead of leaving a migration with only its first steps
+					//	(it would be skipped by the next run because it is already registered)
+					Trx.run(transactionName -> {
+						MMigration migration = saveMigrationFromXmlNode(ctx, element, finder, transactionName);
+						if(migration != null) {
+							migrationReferenceId.set(migration.getAD_Migration_ID());
+						}
+					});
 				} catch (Exception e) {
-					log.log(Level.SEVERE, e.getLocalizedMessage());
+					migrationReferenceId.set(-1);
+					log.log(Level.SEVERE, "Migration not imported from " + file + ": " + e.getLocalizedMessage(), e);
 				}
 			}
 		} catch (Exception e) {
@@ -135,7 +163,7 @@ public class XMLMigration implements IMigrationManagement {
 		return migrationReferenceId.get();
 	}
 
-	private MMigration saveMigrationFromXmlNode(Properties ctx, Element element, MigrationFinder finder) {
+	private MMigration saveMigrationFromXmlNode(Properties ctx, Element element, MigrationFinder finder, String transactionName) {
 		if ( !"Migration".equals(element.getLocalName() ) ) {
 			return null;
 		}
@@ -146,7 +174,7 @@ public class XMLMigration implements IMigrationManagement {
 		if(finder.existsMigration(entityType, releaseNo, name, Integer.parseInt(seqNo))) {
 			return null;
 		}
-		MMigration migration = new MMigration(ctx, 0, null);
+		MMigration migration = new MMigration(ctx, 0, transactionName);
 		migration.setName(name);
 		migration.setSeqNo(Integer.parseInt(seqNo));
 		migration.setEntityType(entityType);
@@ -159,28 +187,60 @@ public class XMLMigration implements IMigrationManagement {
 		NodeList children = element.getElementsByTagName("Step");
 		Stream<Node> nodeStream = IntStream.range(0, children.getLength())
 				.mapToObj(children::item);
+		//	Each step is saved inside a savepoint: when it fails only that step is rolled back and it is registered
+		//	as Failed with the error, so the migration stays complete and the failure is visible in the dictionary
+		//	(StatusCode <> Applied, error on the step) as it always was
+		Trx transaction = Trx.get(transactionName, false);
 		nodeStream.forEach(elementValue -> {
-			try {
-				Element step = (Element) elementValue;
-				if ( "Step".equals(step.getTagName())) {
-					saveStepFromXmlNode(ctx, migration.getAD_Migration_ID(), step);
+			Element step = (Element) elementValue;
+			if ( "Step".equals(step.getTagName())) {
+				Savepoint savepoint = null;
+				try {
+					savepoint = transaction.setSavepoint(null);
+					saveStepFromXmlNode(ctx, migration.getAD_Migration_ID(), step, transactionName);
+					transaction.releaseSavepoint(savepoint);
+				} catch (Exception e) {
+					String error = "Import failed: " + e.getLocalizedMessage();
+					log.log(Level.SEVERE, migration + ": Step " + step.getAttribute("SeqNo") + " " + error, e);
+					try {
+						if (savepoint != null) {
+							transaction.rollback(savepoint);
+						}
+					} catch (SQLException rollbackError) {
+						throw new AdempiereException(rollbackError);
+					}
+					saveFailedStep(ctx, migration.getAD_Migration_ID(), step, error, transactionName);
 				}
-			} catch (Exception e) {
-				log.log(Level.SEVERE, e.getLocalizedMessage());
 			}
 		});
 		return migration;
 	}
 
-	private void saveStepFromXmlNode(Properties ctx, int migrationId, Node stepNode) {
-		MMigrationStep migrationStep = new MMigrationStep(ctx, 0, null);
+	/**
+	 * Register a step that could not be imported: Failed, without table/data, with the error in ErrorMsg and Comments
+	 * (applying it overwrites ErrorMsg, the comment keeps the import error). The migrator repair re-creates it from the XML.
+	 */
+	private void saveFailedStep(Properties ctx, int migrationId, Element step, String error, String transactionName) {
+		MMigrationStep migrationStep = new MMigrationStep(ctx, 0, transactionName);
+		migrationStep.setAD_Migration_ID(migrationId);
+		migrationStep.setSeqNo(Integer.parseInt(step.getAttribute("SeqNo").trim()));
+		migrationStep.setStepType(step.getAttribute("StepType"));
+		migrationStep.setStatusCode(MMigrationStep.STATUSCODE_Failed);
+		migrationStep.setErrorMsg(error);
+		migrationStep.setComments(error);
+		migrationStep.setIsDirectLoad(true);
+		migrationStep.saveEx();
+	}
+
+	private void saveStepFromXmlNode(Properties ctx, int migrationId, Node stepNode, String transactionName) {
+		MMigrationStep migrationStep = new MMigrationStep(ctx, 0, transactionName);
 		migrationStep.setAD_Migration_ID(migrationId);
 		Element step = (Element) stepNode;
 		migrationStep.setSeqNo(Integer.parseInt(step.getAttribute("SeqNo")));
 		migrationStep.setStepType(step.getAttribute("StepType"));
 		migrationStep.setStatusCode(MMigrationStep.STATUSCODE_Unapplied);
 		migrationStep.setIsDirectLoad(true);
-		migrationStep.saveEx(null);
+		migrationStep.saveEx();
 		Node comment = (Element) step.getElementsByTagName("Comments").item(0);
 		if (comment != null) {
 			migrationStep.setComments(comment.getTextContent());
@@ -194,7 +254,7 @@ public class XMLMigration implements IMigrationManagement {
 				migrationStep.setRecord_ID(Integer.parseInt(element.getAttribute("Record_ID")));
 				NodeList data = element.getElementsByTagName("Data");
 				for (int j =0 ; j < data.getLength(); j++) {
-					saveNodeFromXmlNode(ctx, migrationStep.getAD_MigrationStep_ID(), data.item(j));
+					saveNodeFromXmlNode(ctx, migrationStep.getAD_MigrationStep_ID(), data.item(j), transactionName);
 				}
 			}
 		} else if (MMigrationStep.STEPTYPE_SQLStatement.equals(migrationStep.getStepType())) {
@@ -217,8 +277,8 @@ public class XMLMigration implements IMigrationManagement {
 		log.log(Level.CONFIG, migrationStep.getAD_Migration().toString() + ": Step " + migrationStep.getSeqNo() + " loaded");
 	}
 
-	private void saveNodeFromXmlNode(Properties ctx, int stepId, Node item) {
-		MMigrationData data = new MMigrationData(ctx, 0, null);
+	private void saveNodeFromXmlNode(Properties ctx, int stepId, Node item, String transactionName) {
+		MMigrationData data = new MMigrationData(ctx, 0, transactionName);
 		data.setAD_MigrationStep_ID(stepId);
 		Element element = (Element)item;
 		data.setIsOldNull("true".equals(element.getAttribute("isOldNull")));
@@ -227,7 +287,7 @@ public class XMLMigration implements IMigrationManagement {
 		data.setIsNewNull("true".equals(element.getAttribute("isNewNull")));
 		data.setNewValue(element.getTextContent());
 		data.setIsDirectLoad(true);
-		data.saveEx(null);
+		data.saveEx();
 	}
 
 	@Override

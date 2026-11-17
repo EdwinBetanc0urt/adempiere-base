@@ -17,4 +17,4 @@ BEGIN
     RETURN o_MaxPayDate;
 END;
 $BODY$
-  LANGUAGE plpgsql;
+  LANGUAGE plpgsql STABLE;

@@ -24,6 +24,7 @@ import org.compiere.util.CLogger;
 import org.compiere.util.DB;
 import org.compiere.util.DisplayType;
 import org.compiere.util.Env;
+import org.compiere.util.Trx;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -37,7 +38,9 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 
@@ -343,21 +346,39 @@ public class MMigrationStep extends X_AD_MigrationStep {
         {
         	//	Synchronize column first
         	getParent().syncColumn();
-        	//	
-		     Connection conn = DB.getConnectionRW();
+        	//	The SQL runs in the transaction of the migration (when there is one), DDL included: PostgreSQL DDL is
+        	//	transactional, so the step sees what the previous steps of the migration did (and waits for no lock
+        	//	held by that transaction) and is rolled back with them. Only statements that PostgreSQL cannot run
+        	//	in a transaction block (CONCURRENTLY, VACUUM, CREATE DATABASE, ...) run on their own connection
+        	//	with autocommit and a lock timeout. Without a migration transaction the step uses its own connection
+        	//	and transaction, as before.
+        	List<String> statements = getStatements(sqlStatements, isParse);
+        	Trx migrationTrx = get_TrxName() == null ? null : Trx.get(get_TrxName(), false);
+        	boolean isNonTransactional = isNonTransactional(statements);
+        	boolean isMigrationTrx = !isNonTransactional && migrationTrx != null;
+        	String statusTrxName = isMigrationTrx ? get_TrxName() : null;
+		     Connection conn = isMigrationTrx ? migrationTrx.getConnection() : DB.getConnectionRW();
 		     Statement stmt = null;
+		     java.sql.Savepoint savepoint = null;
 		     try {
 		
-		         conn.setAutoCommit(false);
+		         if (isMigrationTrx) {
+		             //	A failed statement aborts the whole transaction: roll back only this step
+		             savepoint = conn.setSavepoint();
+		         } else {
+		             conn.setAutoCommit(isNonTransactional);
+		         }
 		         stmt = conn.createStatement();
+		         if (isNonTransactional && DB.isPostgreSQL()) {
+		             //	Never wait forever for a lock held by the open migration transaction (a previous step on the
+		             //	same table): fail with an error instead of hanging the migrator
+		             stmt.execute("SET lock_timeout = '" + MSysConfig.getIntValue("MIGRATION_DDL_LOCK_TIMEOUT", 120) + "s'");
+		         }
 		
 		         //  Parse the statement based on semi-colons
 		         if (isParse) {
-		             StringTokenizer tokens = new StringTokenizer(sqlStatements, ";");
-		             while(tokens.hasMoreTokens()) {
-		                 final String sql = tokens.nextToken().trim();
-		                 if (sql != null && sql.length() > 0 )
-		                    stmt.addBatch(sql);
+		             for (String sql : statements) {
+		                 stmt.addBatch(sql);
 		             }
 		             stmt.executeBatch();
 		         } 
@@ -365,19 +386,33 @@ public class MMigrationStep extends X_AD_MigrationStep {
 			         stmt.executeUpdate(sqlStatements);
 			     }
 		
-		         conn.commit();
+		         if (isMigrationTrx) {
+		             conn.releaseSavepoint(savepoint);
+		         } else {
+		             if (!isNonTransactional) {
+		                 conn.commit();
+		             }
+		             closeOwnConnection(conn);
+		         }
 		         setStatusCode(rollback ? MMigrationStep.STATUSCODE_Unapplied : MMigrationStep.STATUSCODE_Applied);
 		         setApply(rollback ? MMigrationStep.APPLY_Apply : MMigrationStep.APPLY_Rollback);
 		         setErrorMsg(null);
-		         conn.close();
 		     } catch (SQLException e) {
 		         SQLException ne = e.getNextException();
 		
 		         // Try to close the connection.  If not failing on error and there are
 		         // many errors, we could be left with a lot of hanging connections.
 		         try {
-		             conn.rollback();
-		             conn.close();
+		             if (isMigrationTrx) {
+		                 if (savepoint != null) {
+		                     conn.rollback(savepoint);
+		                 }
+		             } else {
+		                 if (!conn.getAutoCommit()) {
+		                     conn.rollback();
+		                 }
+		                 closeOwnConnection(conn);
+		             }
 		         } catch (SQLException se) {
 		             ;  // all out of luck
 		         }
@@ -398,7 +433,9 @@ public class MMigrationStep extends X_AD_MigrationStep {
 
 		     } finally {
 		         DB.close(stmt);
-		         saveEx(null);
+		         //	The status goes with the SQL: in the migration transaction when the SQL ran there (committed or
+		         //	rolled back with it, as the AD steps), else committed now as before
+		         saveEx(statusTrxName);
 		     }
 		 }
         else 
@@ -411,6 +448,85 @@ public class MMigrationStep extends X_AD_MigrationStep {
 		return rollback ? "successfully rolled back" : "successfully applied";
 	}
 	
+	/**	Commands that PostgreSQL cannot run inside a transaction block	*/
+	private static final Set<String> NON_TRANSACTIONAL_COMMANDS = Set.of("VACUUM", "CREATE DATABASE", "DROP DATABASE",
+			"CREATE TABLESPACE", "DROP TABLESPACE", "ALTER SYSTEM");
+
+	/**
+	 * Split the SQL of the step in statements (by semicolons when it is parsed, else one statement)
+	 * @param sqlStatements SQL of the step
+	 * @param isParse split by semicolons
+	 * @return statements without blanks
+	 */
+	private static List<String> getStatements(String sqlStatements, boolean isParse) {
+		List<String> statements = new ArrayList<>();
+		if (isParse) {
+			StringTokenizer tokens = new StringTokenizer(sqlStatements, ";");
+			while (tokens.hasMoreTokens()) {
+				String sql = tokens.nextToken().trim();
+				if (sql.length() > 0) {
+					statements.add(sql);
+				}
+			}
+		} else {
+			statements.add(sqlStatements);
+		}
+		return statements;
+	}
+
+	/**
+	 * A step runs outside the migration transaction when any of its statements cannot run inside a transaction
+	 * block: CREATE/DROP INDEX CONCURRENTLY, REINDEX ... CONCURRENTLY, VACUUM, CREATE/DROP DATABASE,
+	 * CREATE/DROP TABLESPACE, ALTER SYSTEM. Such statements should be alone in their step.
+	 * @param statements statements of the step
+	 * @return true when the step cannot run in the migration transaction
+	 */
+	static boolean isNonTransactional(List<String> statements) {
+		return statements.stream().anyMatch(sql -> {
+			String text = getText(sql);
+			if (text.matches("(?s).*\\bCONCURRENTLY\\b.*")) {
+				return true;
+			}
+			return NON_TRANSACTIONAL_COMMANDS.stream().anyMatch(command -> text.startsWith(command + " ") || text.equals(command));
+		});
+	}
+
+	/**
+	 * Statement in upper case without leading comments and with blanks collapsed
+	 * @param sql statement
+	 * @return normalized text
+	 */
+	private static String getText(String sql) {
+		String text = sql.trim();
+		while (text.startsWith("--") || text.startsWith("/*")) {
+			int end = text.startsWith("--") ? text.indexOf('\n') : text.indexOf("*/");
+			if (end < 0) {
+				return "";
+			}
+			text = text.substring(end + (text.startsWith("--") ? 1 : 2)).trim();
+		}
+		return text.replaceAll("\\s+", " ").toUpperCase(Locale.ROOT);
+	}
+
+	/**
+	 * Close a connection opened only for this step (never the one of the migration transaction)
+	 * @param conn connection
+	 */
+	private static void closeOwnConnection(Connection conn) throws SQLException {
+		if (DB.isPostgreSQL()) {
+			//	The connection returns to the pool: do not keep the lock timeout of the DDL
+			try (Statement reset = conn.createStatement()) {
+				reset.execute("RESET lock_timeout");
+			} catch (SQLException e) {
+				;	//	the connection is closed anyway
+			}
+		}
+		if (!conn.getAutoCommit()) {
+			conn.setAutoCommit(true);
+		}
+		conn.close();
+	}
+
 	/**
 	 * Convert string representation to appropriate object type
 	 * for column

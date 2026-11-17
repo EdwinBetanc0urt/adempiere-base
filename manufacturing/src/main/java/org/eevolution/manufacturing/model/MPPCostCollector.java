@@ -30,6 +30,7 @@ import org.adempiere.core.domains.models.I_C_UOM;
 import org.adempiere.core.domains.models.I_PP_Cost_Collector;
 import org.adempiere.core.domains.models.X_PP_Cost_Collector;
 import org.adempiere.engine.IDocumentLine;
+import org.adempiere.engine.ManualAllocation;
 import org.adempiere.engine.StorageEngine;
 import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.exceptions.DocTypeNotFoundException;
@@ -383,15 +384,17 @@ public class MPPCostCollector extends X_PP_Cost_Collector implements DocAction ,
 		{
 			MPeriod.testPeriodOpen(getCtx(), getDateAcct(), getC_DocTypeTarget_ID(), getAD_Org_ID());
 			MProduct product = getM_Product();
-			//Validate if ASI is mandatory
-			MAttributeSet.validateAttributeSetInstanceMandatory(product, Table_ID , false , getM_AttributeSetInstance_ID());
+			//Validate if ASI is mandatory (with manual allocation the instances are in PP_Cost_CollectorMA)
+			if (!ManualAllocation.isManualAllocation(this))
+				MAttributeSet.validateAttributeSetInstanceMandatory(product, Table_ID , false , getM_AttributeSetInstance_ID());
 		}
 		// Receipt
 		else if (isReceipt())
 		{
 			MPeriod.testPeriodOpen(getCtx(), getDateAcct(), getC_DocTypeTarget_ID(), getAD_Org_ID());
 			MProduct product = getM_Product();
-			MAttributeSet.validateAttributeSetInstanceMandatory(product, Table_ID , false , getM_AttributeSetInstance_ID());
+			if (!ManualAllocation.isManualAllocation(this))
+				MAttributeSet.validateAttributeSetInstanceMandatory(product, Table_ID , false , getM_AttributeSetInstance_ID());
 		}
 		
 		m_justPrepared = true;

@@ -15,4 +15,4 @@ BEGIN
     RETURN coalesce(v_amt,0);
 END;
 $BODY$
-  LANGUAGE plpgsql;
+  LANGUAGE plpgsql STABLE;

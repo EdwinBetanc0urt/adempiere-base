@@ -22,10 +22,12 @@ import org.adempiere.exceptions.DBException;
 import org.compiere.db.CConnection;
 import org.compiere.util.*;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -34,6 +36,8 @@ import java.util.Date;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *	Sequence Model.
@@ -56,6 +60,10 @@ public class MSequence extends X_AD_Sequence
 	private static final Level LOGLEVEL = Level.ALL;
 
 	private static final int QUERY_TIME_OUT = 10;
+
+	private static final int HTTP_TIMEOUT = 10000;
+
+	private static final Pattern ID_RESPONSE = Pattern.compile("\"id\"\\s*:\\s*(\\d+)");
 
 	public static int getNextID (int AD_Client_ID, String TableName)
 	{
@@ -1395,87 +1403,82 @@ public class MSequence extends X_AD_Sequence
 
 	/**
 	 *	Get next number for Key column
-	 *  @param AD_Client_ID client
 	 *  @param TableName table name
-	 * 	@param trxName optional Transaction Name
 	 *  @return next no or (-1=error)
 	 */
 	public static synchronized int getNextOfficialID_HTTP (String TableName)
 	{
-		String website = MSysConfig.getValue("DICTIONARY_ID_WEBSITE"); // "http://developer.adempiere.com/cgi-bin/get_ID";
-		String prm_USER = MSysConfig.getValue("DICTIONARY_ID_USER");  // "globalqss";
-		String prm_PASSWORD = MSysConfig.getValue("DICTIONARY_ID_PASSWORD");  // "password_inseguro";
-		String prm_TABLE = TableName;
-		String prm_ALTKEY = "";  // TODO: generate alt-key based on key of table
+		String website = MSysConfig.getValue("DICTIONARY_ID_WEBSITE");
+		String prm_TOKEN = MSysConfig.getValue("DICTIONARY_ID_TOKEN");
 		String prm_COMMENT = MSysConfig.getValue("DICTIONARY_ID_COMMENTS");
 		String prm_PROJECT = new String("Adempiere");
 
-		return getNextID_HTTP(TableName, website, prm_USER,
-				prm_PASSWORD, prm_TABLE, prm_ALTKEY, prm_COMMENT, prm_PROJECT);
+		return getNextID_HTTP(TableName, website, prm_TOKEN, prm_COMMENT, prm_PROJECT);
 	}
 
 	/**
 	 *	Get next number for Key column
-	 *  @param AD_Client_ID client
 	 *  @param TableName table name
-	 * 	@param trxName optional Transaction Name
 	 *  @return next no or (-1=error)
 	 */
 	public static synchronized int getNextProjectID_HTTP (String TableName)
 	{
-		String website = MSysConfig.getValue("PROJECT_ID_WEBSITE"); // "http://developer.adempiere.com/cgi-bin/get_ID";
-		String prm_USER = MSysConfig.getValue("PROJECT_ID_USER");  // "globalqss";
-		String prm_PASSWORD = MSysConfig.getValue("PROJECT_ID_PASSWORD");  // "password_inseguro";
-		String prm_TABLE = TableName;
-		String prm_ALTKEY = "";  // TODO: generate alt-key based on key of table
+		String website = MSysConfig.getValue("PROJECT_ID_WEBSITE");
+		String prm_TOKEN = MSysConfig.getValue("PROJECT_ID_TOKEN");
 		String prm_COMMENT = MSysConfig.getValue("PROJECT_ID_COMMENTS");
 		String prm_PROJECT = MSysConfig.getValue("PROJECT_ID_PROJECT");
 
-		return getNextID_HTTP(TableName, website, prm_USER,
-				prm_PASSWORD, prm_TABLE, prm_ALTKEY, prm_COMMENT, prm_PROJECT);
+		return getNextID_HTTP(TableName, website, prm_TOKEN, prm_COMMENT, prm_PROJECT);
+	}
+
+	private static String toJsonString(String value) {
+		if (value == null)
+			return "\"\"";
+		return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t") + "\"";
 	}
 
 	private static int getNextID_HTTP(String TableName,
-			String website, String prm_USER, String prm_PASSWORD,
-			String prm_TABLE, String prm_ALTKEY, String prm_COMMENT,
+			String website, String prm_TOKEN, String prm_COMMENT,
 			String prm_PROJECT) {
-		StringBuffer read = new StringBuffer();
 		int retValue = -1;
+		String read = "";
 		try {
-			String completeUrl = website + "?" + "USER="
-					+ URLEncoder.encode(prm_USER, "UTF-8") + "&PASSWORD="
-					+ URLEncoder.encode(prm_PASSWORD, "UTF-8") + "&PROJECT="
-					+ URLEncoder.encode(prm_PROJECT, "UTF-8") + "&TABLE="
-					+ URLEncoder.encode(prm_TABLE, "UTF-8") + "&ALTKEY="
-					+ URLEncoder.encode(prm_ALTKEY, "UTF-8") + "&COMMENT="
-					+ URLEncoder.encode(prm_COMMENT, "UTF-8");
-
-			// Now use the URL class to parse the user-specified URL into
-			// its various parts: protocol, host, port, filename.  Check the protocol
-			URL url = new URL(completeUrl);
+			URL url = new URL(website);
 			String protocol = url.getProtocol();
-			if (!protocol.equals("http"))
-				throw new IllegalArgumentException("URL must use 'http:' protocol");
+			if (!protocol.equals("http") && !protocol.equals("https"))
+				throw new IllegalArgumentException("URL must use 'http:' or 'https:' protocol");
+			String body = "{\"table_name\":" + toJsonString(TableName)
+					+ ",\"comment\":" + toJsonString(prm_COMMENT)
+					+ ",\"project\":" + toJsonString(prm_PROJECT) + "}";
 			HttpURLConnection conn = (HttpURLConnection)url.openConnection();
-			conn.setRequestMethod("GET");
-			conn.setAllowUserInteraction(false);
-			InputStream is =  conn.getInputStream();
-
-			// Now read the server's response, and write it to the file
-			byte[] buffer = new byte[4096];
-			int bytes_read;
-			while((bytes_read = is.read(buffer)) != -1) {
-				for (int i = 0; i < bytes_read; i++) {
-					if (buffer[i] != 10)
-						read.append((char) buffer[i]);
+			try {
+				conn.setRequestMethod("POST");
+				conn.setAllowUserInteraction(false);
+				conn.setConnectTimeout(HTTP_TIMEOUT);
+				conn.setReadTimeout(HTTP_TIMEOUT);
+				conn.setDoOutput(true);
+				conn.setRequestProperty("Authorization", "Bearer " + prm_TOKEN);
+				conn.setRequestProperty("Content-Type", "application/json");
+				conn.setRequestProperty("Accept", "application/json");
+				try (OutputStream os = conn.getOutputStream()) {
+					os.write(body.getBytes(StandardCharsets.UTF_8));
 				}
+				int status = conn.getResponseCode();
+				if (status < 200 || status > 299)
+					throw new IOException("HTTP " + status);
+				try (InputStream is = conn.getInputStream()) {
+					read = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+				}
+			} finally {
+				conn.disconnect();
 			}
-			conn.disconnect();
-			retValue = Integer.parseInt(read.toString());
+			Matcher matcher = ID_RESPONSE.matcher(read);
+			if (matcher.find())
+				retValue = Integer.parseInt(matcher.group(1));
 			if (retValue <= 0)
 				retValue = -1;
 		}
-		catch (Exception e) {    // Report any errors that arise
+		catch (Exception e) {
 			System.err.println(e);
 			retValue = -1;
 		}

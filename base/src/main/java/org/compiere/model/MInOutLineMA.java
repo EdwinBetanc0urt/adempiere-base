@@ -86,14 +86,12 @@ public class MInOutLineMA extends X_M_InOutLineMA
 	/**************************************************************************
 	 * 	Standard Constructor
 	 *	@param ctx context
-	 *	@param M_InOutLineMA_ID ignored
+	 *	@param M_InOutLineMA_ID id
 	 *	@param trxName trx
 	 */
 	public MInOutLineMA (Properties ctx, int M_InOutLineMA_ID, String trxName)
 	{
 		super (ctx, M_InOutLineMA_ID, trxName);
-		if (M_InOutLineMA_ID != 0)
-			throw new IllegalArgumentException("Multi-Key");
 	}	//	MInOutLineMA
 
 	/**
@@ -131,6 +129,9 @@ public class MInOutLineMA extends X_M_InOutLineMA
 	protected boolean beforeSave (boolean newRecord)
 	{
 		MInOutLine inOutLine =  (MInOutLine) getM_InOutLine();
+		//	Keep the reference to the document header of the line
+		if (inOutLine.getM_InOut_ID() > 0 && getM_InOut_ID() != inOutLine.getM_InOut_ID())
+			setM_InOut_ID(inOutLine.getM_InOut_ID());
 		MProduct product = (MProduct) inOutLine.getM_Product();
 		MAttributeSet.validateAttributeSetInstanceMandatory(product, MInOutLine.Table_ID, inOutLine.isSOTrx(), getM_AttributeSetInstance_ID());
 		return true;

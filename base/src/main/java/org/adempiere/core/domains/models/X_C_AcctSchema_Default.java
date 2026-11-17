@@ -2045,4 +2045,22 @@ public class X_C_AcctSchema_Default extends PO implements I_C_AcctSchema_Default
 			 return 0;
 		return ii.intValue();
 	}
+
+	/** Set Landed Cost Clearing. */
+	public void setP_LandedCostClearing_Acct (int P_LandedCostClearing_Acct)
+	{
+		if (P_LandedCostClearing_Acct < 1) 
+			set_Value (COLUMNNAME_P_LandedCostClearing_Acct, null);
+		else 
+			set_Value (COLUMNNAME_P_LandedCostClearing_Acct, Integer.valueOf(P_LandedCostClearing_Acct));
+	}
+
+	/** Get Landed Cost Clearing. */
+	public int getP_LandedCostClearing_Acct () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_P_LandedCostClearing_Acct);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
 }

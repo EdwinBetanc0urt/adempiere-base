@@ -170,6 +170,34 @@ public class X_WM_InOutBoundLineMA extends PO implements I_WM_InOutBoundLineMA, 
 		return (String)get_Value(COLUMNNAME_UUID);
 	}
 
+	public org.adempiere.core.domains.models.I_WM_InOutBound getWM_InOutBound() throws RuntimeException
+    {
+		return (org.adempiere.core.domains.models.I_WM_InOutBound)MTable.get(getCtx(), org.adempiere.core.domains.models.I_WM_InOutBound.Table_Name)
+			.getPO(getWM_InOutBound_ID(), get_TrxName());	}
+
+	/** Set Inbound & Outbound Order.
+		@param WM_InOutBound_ID 
+		Inbound & Outbound Order
+	  */
+	public void setWM_InOutBound_ID (int WM_InOutBound_ID)
+	{
+		if (WM_InOutBound_ID < 1) 
+			set_Value (COLUMNNAME_WM_InOutBound_ID, null);
+		else 
+			set_Value (COLUMNNAME_WM_InOutBound_ID, Integer.valueOf(WM_InOutBound_ID));
+	}
+
+	/** Get Inbound & Outbound Order.
+		@return Inbound & Outbound Order
+	  */
+	public int getWM_InOutBound_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_WM_InOutBound_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
 	public org.adempiere.core.domains.models.I_WM_InOutBoundLine getWM_InOutBoundLine() throws RuntimeException
     {
 		return (org.adempiere.core.domains.models.I_WM_InOutBoundLine)MTable.get(getCtx(), org.adempiere.core.domains.models.I_WM_InOutBoundLine.Table_Name)

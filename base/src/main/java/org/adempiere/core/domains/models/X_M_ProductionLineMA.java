@@ -107,6 +107,34 @@ public class X_M_ProductionLineMA extends PO implements I_M_ProductionLineMA, I_
 		return ii.intValue();
 	}
 
+	public org.adempiere.core.domains.models.I_M_Production getM_Production() throws RuntimeException
+    {
+		return (org.adempiere.core.domains.models.I_M_Production)MTable.get(getCtx(), org.adempiere.core.domains.models.I_M_Production.Table_Name)
+			.getPO(getM_Production_ID(), get_TrxName());	}
+
+	/** Set Production.
+		@param M_Production_ID 
+		Plan for producing a product
+	  */
+	public void setM_Production_ID (int M_Production_ID)
+	{
+		if (M_Production_ID < 1) 
+			set_Value (COLUMNNAME_M_Production_ID, null);
+		else 
+			set_Value (COLUMNNAME_M_Production_ID, Integer.valueOf(M_Production_ID));
+	}
+
+	/** Get Production.
+		@return Plan for producing a product
+	  */
+	public int getM_Production_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_M_Production_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
 	public org.adempiere.core.domains.models.I_M_ProductionLine getM_ProductionLine() throws RuntimeException
     {
 		return (org.adempiere.core.domains.models.I_M_ProductionLine)MTable.get(getCtx(), org.adempiere.core.domains.models.I_M_ProductionLine.Table_Name)
@@ -142,6 +170,29 @@ public class X_M_ProductionLineMA extends PO implements I_M_ProductionLineMA, I_
     {
         return new KeyNamePair(get_ID(), String.valueOf(getM_ProductionLine_ID()));
     }
+
+	/** Set Production Line Allocation.
+		@param M_ProductionLineMA_ID 
+		Material allocation of the line by attribute set instance
+	  */
+	public void setM_ProductionLineMA_ID (int M_ProductionLineMA_ID)
+	{
+		if (M_ProductionLineMA_ID < 1) 
+			set_ValueNoCheck (COLUMNNAME_M_ProductionLineMA_ID, null);
+		else 
+			set_ValueNoCheck (COLUMNNAME_M_ProductionLineMA_ID, Integer.valueOf(M_ProductionLineMA_ID));
+	}
+
+	/** Get Production Line Allocation.
+		@return Material allocation of the line by attribute set instance
+	  */
+	public int getM_ProductionLineMA_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_M_ProductionLineMA_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
 
 	/** Set Movement Quantity.
 		@param MovementQty 

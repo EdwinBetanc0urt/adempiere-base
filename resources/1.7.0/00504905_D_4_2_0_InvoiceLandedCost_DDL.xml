@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<Migrations>
+  <Migration EntityType="D" Name="InvoiceLandedCost_DDL" ReleaseNo="4.2.0" SeqNo="504905">
+    <Comments>Add Invoice Landed Cost DDL</Comments>
+    <Step DBType="Postgres" Parse="N" SeqNo="10" StepType="SQL">
+      <SQLStatement>
+          -- Issue 3134 - Landed Cost as a document
+          -- SCRIPT 1 OF 3 - DDL (structure only). Execution order: 1 DDL  2 Setup  3 Historical.
+          -- Idempotent (PostgreSQL): adds only what is missing, can be run multiple times.
+          -- Syncs the physical columns with what is registered in the dictionary. Does not touch data.
+          -- The mandatory constraint (NOT NULL) on document columns is applied at the end of script 3, once they have values.
+
+          SET search_path = adempiere;
+
+          -- ============================================================
+          -- Columns and indexes
+          -- ============================================================
+
+          -- C_LandedCost (document)
+          ALTER TABLE C_LandedCost ADD COLUMN IF NOT EXISTS Amt                    NUMERIC DEFAULT 0 NOT NULL;
+          ALTER TABLE C_LandedCost ADD COLUMN IF NOT EXISTS C_ConversionType_ID    NUMERIC(10);
+          ALTER TABLE C_LandedCost ADD COLUMN IF NOT EXISTS C_Currency_ID          NUMERIC(10);
+          ALTER TABLE C_LandedCost ADD COLUMN IF NOT EXISTS C_DocType_ID           NUMERIC(10);
+          ALTER TABLE C_LandedCost ADD COLUMN IF NOT EXISTS C_InvoiceLandedCost_ID NUMERIC(10);
+          ALTER TABLE C_LandedCost ADD COLUMN IF NOT EXISTS DateAcct               TIMESTAMP WITHOUT TIME ZONE;
+          ALTER TABLE C_LandedCost ADD COLUMN IF NOT EXISTS DateDoc                TIMESTAMP WITHOUT TIME ZONE;
+          ALTER TABLE C_LandedCost ADD COLUMN IF NOT EXISTS IsApproved             CHAR(1) DEFAULT 'N';
+          ALTER TABLE C_LandedCost ADD COLUMN IF NOT EXISTS Processed              CHAR(1) DEFAULT 'N' NOT NULL;
+          ALTER TABLE C_LandedCost ADD COLUMN IF NOT EXISTS ProcessedOn            NUMERIC;
+          ALTER TABLE C_LandedCost ADD COLUMN IF NOT EXISTS Reversal_ID            NUMERIC(10);
+
+          -- C_LandedCostAllocation (document lines)
+          ALTER TABLE C_LandedCostAllocation ADD COLUMN IF NOT EXISTS C_LandedCost_ID NUMERIC(10);
+
+          -- C_InvoiceLine: "Distribute landed cost from purchase orders" button (AD_Column 210484, process 200123)
+          ALTER TABLE C_InvoiceLine ADD COLUMN IF NOT EXISTS GenerateFromOrder CHAR(1);
+
+          -- "Landed Cost Clearing" account (already exists in M_Product_Acct and C_AcctSchema_Default)
+          ALTER TABLE M_Product_Category_Acct ADD COLUMN IF NOT EXISTS P_LandedCostClearing_Acct NUMERIC(10);
+          ALTER TABLE M_Product_Acct          ADD COLUMN IF NOT EXISTS P_LandedCostClearing_Acct NUMERIC(10);
+          ALTER TABLE C_AcctSchema_Default    ADD COLUMN IF NOT EXISTS P_LandedCostClearing_Acct NUMERIC(10);
+
+          -- Indexes
+          CREATE INDEX IF NOT EXISTS idx_c_landedcost_c_invoice_id            ON C_LandedCost (C_Invoice_ID);
+          CREATE INDEX IF NOT EXISTS idx_c_landedcost_c_invoicelandedcost_id  ON C_LandedCost (C_InvoiceLandedCost_ID);
+          CREATE INDEX IF NOT EXISTS idx_c_landedcost_reversal_id             ON C_LandedCost (Reversal_ID);
+          CREATE INDEX IF NOT EXISTS idx_c_landedcostallocation_c_landedcost_id ON C_LandedCostAllocation (C_LandedCost_ID);
+          CREATE INDEX IF NOT EXISTS idx_c_invoicelandedcost_c_invoice_id     ON C_InvoiceLandedCost (C_Invoice_ID);
+          CREATE INDEX IF NOT EXISTS idx_c_invoicelandedcost_c_invoiceline_id ON C_InvoiceLandedCost (C_InvoiceLine_ID);
+          CREATE INDEX IF NOT EXISTS idx_c_invoicelandedcost_c_orderline_id   ON C_InvoiceLandedCost (C_OrderLine_ID);
+
+      </SQLStatement>
+    </Step>
+  </Migration>
+</Migrations>

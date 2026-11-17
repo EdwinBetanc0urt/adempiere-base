@@ -52,7 +52,7 @@ BEGIN
     IF (p_M_AttributeSetInstance_ID > 0) THEN
         SELECT asi.Lot, asi.SerNo, asi.GuaranteeDate,
             COALESCE(a.SerNoCharSOverwrite, '#'::CHAR(1)), COALESCE(a.SerNoCharEOverwrite, ''::CHAR(1)),
-            COALESCE(a.LotCharSOverwrite, '«'::CHAR(1)), COALESCE(a.LotCharEOverwrite, '»'::CHAR(1))
+            COALESCE(a.LotCharSOverwrite, 'ï¿½'::CHAR(1)), COALESCE(a.LotCharEOverwrite, 'ï¿½'::CHAR(1))
           INTO v_Lot, v_SerNo, v_GuaranteeDate,
             v_SerNoStart, v_SerNoEnd, v_LotStart, v_LotEnd
         FROM M_AttributeSetInstance asi
@@ -88,5 +88,5 @@ BEGIN
     RETURN v_Name;
 END;
 
-$body$ LANGUAGE plpgsql;
+$body$ LANGUAGE plpgsql STABLE;
  	  	 

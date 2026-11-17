@@ -107,6 +107,34 @@ public class X_M_InventoryLineMA extends PO implements I_M_InventoryLineMA, I_Pe
 		return ii.intValue();
 	}
 
+	public org.adempiere.core.domains.models.I_M_Inventory getM_Inventory() throws RuntimeException
+    {
+		return (org.adempiere.core.domains.models.I_M_Inventory)MTable.get(getCtx(), org.adempiere.core.domains.models.I_M_Inventory.Table_Name)
+			.getPO(getM_Inventory_ID(), get_TrxName());	}
+
+	/** Set Phys.Inventory.
+		@param M_Inventory_ID 
+		Parameters for a Physical Inventory
+	  */
+	public void setM_Inventory_ID (int M_Inventory_ID)
+	{
+		if (M_Inventory_ID < 1) 
+			set_Value (COLUMNNAME_M_Inventory_ID, null);
+		else 
+			set_Value (COLUMNNAME_M_Inventory_ID, Integer.valueOf(M_Inventory_ID));
+	}
+
+	/** Get Phys.Inventory.
+		@return Parameters for a Physical Inventory
+	  */
+	public int getM_Inventory_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_M_Inventory_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
 	public org.adempiere.core.domains.models.I_M_InventoryLine getM_InventoryLine() throws RuntimeException
     {
 		return (org.adempiere.core.domains.models.I_M_InventoryLine)MTable.get(getCtx(), org.adempiere.core.domains.models.I_M_InventoryLine.Table_Name)
@@ -142,6 +170,29 @@ public class X_M_InventoryLineMA extends PO implements I_M_InventoryLineMA, I_Pe
     {
         return new KeyNamePair(get_ID(), String.valueOf(getM_InventoryLine_ID()));
     }
+
+	/** Set Inventory Line Allocation.
+		@param M_InventoryLineMA_ID 
+		Material allocation of the line by attribute set instance
+	  */
+	public void setM_InventoryLineMA_ID (int M_InventoryLineMA_ID)
+	{
+		if (M_InventoryLineMA_ID < 1) 
+			set_ValueNoCheck (COLUMNNAME_M_InventoryLineMA_ID, null);
+		else 
+			set_ValueNoCheck (COLUMNNAME_M_InventoryLineMA_ID, Integer.valueOf(M_InventoryLineMA_ID));
+	}
+
+	/** Get Inventory Line Allocation.
+		@return Material allocation of the line by attribute set instance
+	  */
+	public int getM_InventoryLineMA_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_M_InventoryLineMA_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
 
 	/** Set Movement Quantity.
 		@param MovementQty 

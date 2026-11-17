@@ -108,6 +108,21 @@ public interface I_M_InOutLineMA
 
 	public I_M_AttributeSetInstance getM_AttributeSetInstance() throws RuntimeException;
 
+    /** Column name M_InOut_ID */
+    public static final String COLUMNNAME_M_InOut_ID = "M_InOut_ID";
+
+	/** Set Shipment/Receipt.
+	  * Material Shipment Document
+	  */
+	public void setM_InOut_ID (int M_InOut_ID);
+
+	/** Get Shipment/Receipt.
+	  * Material Shipment Document
+	  */
+	public int getM_InOut_ID();
+
+	public org.adempiere.core.domains.models.I_M_InOut getM_InOut() throws RuntimeException;
+
     /** Column name M_InOutLine_ID */
     public static final String COLUMNNAME_M_InOutLine_ID = "M_InOutLine_ID";
 
@@ -122,6 +137,19 @@ public interface I_M_InOutLineMA
 	public int getM_InOutLine_ID();
 
 	public org.adempiere.core.domains.models.I_M_InOutLine getM_InOutLine() throws RuntimeException;
+
+    /** Column name M_InOutLineMA_ID */
+    public static final String COLUMNNAME_M_InOutLineMA_ID = "M_InOutLineMA_ID";
+
+	/** Set Shipment/Receipt Line Allocation.
+	  * Material allocation of the line by attribute set instance
+	  */
+	public void setM_InOutLineMA_ID (int M_InOutLineMA_ID);
+
+	/** Get Shipment/Receipt Line Allocation.
+	  * Material allocation of the line by attribute set instance
+	  */
+	public int getM_InOutLineMA_ID();
 
     /** Column name MovementQty */
     public static final String COLUMNNAME_MovementQty = "MovementQty";

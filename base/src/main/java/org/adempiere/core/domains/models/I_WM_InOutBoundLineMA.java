@@ -165,6 +165,21 @@ public interface I_WM_InOutBoundLineMA
 	  */
 	public String getUUID();
 
+    /** Column name WM_InOutBound_ID */
+    public static final String COLUMNNAME_WM_InOutBound_ID = "WM_InOutBound_ID";
+
+	/** Set Inbound & Outbound Order.
+	  * Inbound & Outbound Order
+	  */
+	public void setWM_InOutBound_ID (int WM_InOutBound_ID);
+
+	/** Get Inbound & Outbound Order.
+	  * Inbound & Outbound Order
+	  */
+	public int getWM_InOutBound_ID();
+
+	public org.adempiere.core.domains.models.I_WM_InOutBound getWM_InOutBound() throws RuntimeException;
+
     /** Column name WM_InOutBoundLine_ID */
     public static final String COLUMNNAME_WM_InOutBoundLine_ID = "WM_InOutBoundLine_ID";
 

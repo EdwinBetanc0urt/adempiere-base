@@ -119,15 +119,13 @@ public class MMovementLineMA extends X_M_MovementLineMA
 	/**************************************************************************
 	 * 	Standard Constructor
 	 *	@param ctx context
-	 *	@param M_MovementLineMA_ID ignored
+	 *	@param M_MovementLineMA_ID id
 	 *	@param trxName trx
 	 */
 	public MMovementLineMA (Properties ctx, int M_MovementLineMA_ID,
 		String trxName)
 	{
 		super (ctx, M_MovementLineMA_ID, trxName);
-		if (M_MovementLineMA_ID != 0)
-			throw new IllegalArgumentException("Multi-Key");
 	}	//	MMovementLineMA
 
 	/**
@@ -157,6 +155,24 @@ public class MMovementLineMA extends X_M_MovementLineMA
 		setMovementQty(movementQty);
 	}	//	MMovementLineMA
 	
+	/**
+	 * 	Before Save: keep the reference to the document header of the line
+	 *	@param newRecord new
+	 *	@return true
+	 */
+	@Override
+	protected boolean beforeSave (boolean newRecord)
+	{
+		if (getM_MovementLine_ID() > 0
+				&& (newRecord || is_ValueChanged(COLUMNNAME_M_MovementLine_ID) || getM_Movement_ID() <= 0))
+		{
+			int headerId = DB.getSQLValueEx(get_TrxName(),
+					"SELECT M_Movement_ID FROM M_MovementLine WHERE M_MovementLine_ID=?", getM_MovementLine_ID());
+			setM_Movement_ID(headerId);
+		}
+		return true;
+	}	//	beforeSave
+
 	/**
 	 * 	String Representation
 	 *	@return info

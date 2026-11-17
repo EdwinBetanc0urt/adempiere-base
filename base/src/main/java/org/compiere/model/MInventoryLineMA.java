@@ -113,14 +113,12 @@ public class MInventoryLineMA extends X_M_InventoryLineMA
 	/**************************************************************************
 	 * 	Standard Constructor
 	 *	@param ctx context
-	 *	@param M_InventoryLineMA_ID ignored
+	 *	@param M_InventoryLineMA_ID id
 	 *	@param trxName trx
 	 */
 	public MInventoryLineMA (Properties ctx, int M_InventoryLineMA_ID, String trxName)
 	{
 		super (ctx, M_InventoryLineMA_ID, trxName);
-		if (M_InventoryLineMA_ID != 0)
-			throw new IllegalArgumentException("Multi-Key");
 	}	//	MInventoryLineMA
 
 	/**
@@ -150,6 +148,24 @@ public class MInventoryLineMA extends X_M_InventoryLineMA
 		setMovementQty(MovementQty);
 	}	//	MInventoryLineMA
 	
+	/**
+	 * 	Before Save: keep the reference to the document header of the line
+	 *	@param newRecord new
+	 *	@return true
+	 */
+	@Override
+	protected boolean beforeSave (boolean newRecord)
+	{
+		if (getM_InventoryLine_ID() > 0
+				&& (newRecord || is_ValueChanged(COLUMNNAME_M_InventoryLine_ID) || getM_Inventory_ID() <= 0))
+		{
+			int headerId = DB.getSQLValueEx(get_TrxName(),
+					"SELECT M_Inventory_ID FROM M_InventoryLine WHERE M_InventoryLine_ID=?", getM_InventoryLine_ID());
+			setM_Inventory_ID(headerId);
+		}
+		return true;
+	}	//	beforeSave
+
 	/**
 	 * 	String Representation
 	 *	@return info

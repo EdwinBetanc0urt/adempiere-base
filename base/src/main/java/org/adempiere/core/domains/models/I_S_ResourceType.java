@@ -213,6 +213,19 @@ public interface I_S_ResourceType
 	  */
 	public boolean isTimeSlot();
 
+    /** Column name IsValidateAvailability */
+    public static final String COLUMNNAME_IsValidateAvailability = "IsValidateAvailability";
+
+	/** Set Validate Availability.
+	  * Validate that resources of this type are free before allocating them
+	  */
+	public void setIsValidateAvailability (boolean IsValidateAvailability);
+
+	/** Get Validate Availability.
+	  * Validate that resources of this type are free before allocating them
+	  */
+	public boolean isValidateAvailability();
+
     /** Column name M_Product_Category_ID */
     public static final String COLUMNNAME_M_Product_Category_ID = "M_Product_Category_ID";
 

@@ -57,6 +57,6 @@ BEGIN
 END;
 
 $BODY$
-  LANGUAGE 'plpgsql' VOLATILE;
+  LANGUAGE plpgsql STABLE;
 
 ALTER FUNCTION currencyround(p_amount numeric, p_curto_id numeric, p_costing character varying) OWNER TO adempiere;

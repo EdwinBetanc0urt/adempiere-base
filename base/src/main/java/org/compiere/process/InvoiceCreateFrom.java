@@ -197,8 +197,7 @@ public class InvoiceCreateFrom extends InvoiceCreateFromAbstract {
 				}
 				// MZ Goodwill
 				// copy the landed cost
-				invoiceLine.copyLandedCostFrom(fromLine);
-				invoiceLine.allocateLandedCosts();
+				invoiceLine.copyLandedCostFrom(fromLine, false);
 				// end MZ
 			}
 			//	Add to created

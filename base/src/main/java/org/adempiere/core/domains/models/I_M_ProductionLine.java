@@ -210,6 +210,19 @@ public interface I_M_ProductionLine
 	  */
 	public boolean isEndProduct();
 
+    /** Column name IsManualAllocation */
+    public static final String COLUMNNAME_IsManualAllocation = "IsManualAllocation";
+
+	/** Set Manual Allocation.
+	  * The material allocation (attribute set instances) of the line is entered manually and kept when the document is completed
+	  */
+	public void setIsManualAllocation (boolean IsManualAllocation);
+
+	/** Get Manual Allocation.
+	  * The material allocation (attribute set instances) of the line is entered manually and kept when the document is completed
+	  */
+	public boolean isManualAllocation();
+
     /** Column name Line */
     public static final String COLUMNNAME_Line = "Line";
 

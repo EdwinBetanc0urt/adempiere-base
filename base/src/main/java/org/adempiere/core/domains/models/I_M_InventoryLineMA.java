@@ -108,6 +108,21 @@ public interface I_M_InventoryLineMA
 
 	public I_M_AttributeSetInstance getM_AttributeSetInstance() throws RuntimeException;
 
+    /** Column name M_Inventory_ID */
+    public static final String COLUMNNAME_M_Inventory_ID = "M_Inventory_ID";
+
+	/** Set Phys.Inventory.
+	  * Parameters for a Physical Inventory
+	  */
+	public void setM_Inventory_ID (int M_Inventory_ID);
+
+	/** Get Phys.Inventory.
+	  * Parameters for a Physical Inventory
+	  */
+	public int getM_Inventory_ID();
+
+	public org.adempiere.core.domains.models.I_M_Inventory getM_Inventory() throws RuntimeException;
+
     /** Column name M_InventoryLine_ID */
     public static final String COLUMNNAME_M_InventoryLine_ID = "M_InventoryLine_ID";
 
@@ -122,6 +137,19 @@ public interface I_M_InventoryLineMA
 	public int getM_InventoryLine_ID();
 
 	public org.adempiere.core.domains.models.I_M_InventoryLine getM_InventoryLine() throws RuntimeException;
+
+    /** Column name M_InventoryLineMA_ID */
+    public static final String COLUMNNAME_M_InventoryLineMA_ID = "M_InventoryLineMA_ID";
+
+	/** Set Inventory Line Allocation.
+	  * Material allocation of the line by attribute set instance
+	  */
+	public void setM_InventoryLineMA_ID (int M_InventoryLineMA_ID);
+
+	/** Get Inventory Line Allocation.
+	  * Material allocation of the line by attribute set instance
+	  */
+	public int getM_InventoryLineMA_ID();
 
     /** Column name MovementQty */
     public static final String COLUMNNAME_MovementQty = "MovementQty";

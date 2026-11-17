@@ -309,6 +309,19 @@ public interface I_PP_Cost_Collector
 	/** Get Is BatchTime	  */
 	public boolean isBatchTime();
 
+    /** Column name IsManualAllocation */
+    public static final String COLUMNNAME_IsManualAllocation = "IsManualAllocation";
+
+	/** Set Manual Allocation.
+	  * The material allocation (attribute set instances) of the line is entered manually and kept when the document is completed
+	  */
+	public void setIsManualAllocation (boolean IsManualAllocation);
+
+	/** Get Manual Allocation.
+	  * The material allocation (attribute set instances) of the line is entered manually and kept when the document is completed
+	  */
+	public boolean isManualAllocation();
+
     /** Column name IsSubcontracting */
     public static final String COLUMNNAME_IsSubcontracting = "IsSubcontracting";
 

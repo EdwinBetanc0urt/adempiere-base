@@ -35,10 +35,6 @@ public class MPPCostCollectorMA extends X_PP_Cost_CollectorMA implements IInvent
 	public MPPCostCollectorMA (Properties ctx, int PP_Cost_CollectorMA_ID, String trxName)
 	{
 		super (ctx, PP_Cost_CollectorMA_ID, trxName);
-		if (PP_Cost_CollectorMA_ID != 0)
-		{
-			throw new IllegalArgumentException("Multi-Key");
-		}
 	}
 
 	public MPPCostCollectorMA (Properties ctx, ResultSet rs, String trxName)

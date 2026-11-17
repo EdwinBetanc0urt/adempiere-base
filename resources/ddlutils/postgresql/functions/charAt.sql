@@ -31,4 +31,4 @@ $$
  BEGIN
  RETURN SUBSTR($1, $2, 1);
  END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql IMMUTABLE;

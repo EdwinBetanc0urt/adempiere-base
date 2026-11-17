@@ -107,6 +107,34 @@ public class X_M_InOutLineMA extends PO implements I_M_InOutLineMA, I_Persistent
 		return ii.intValue();
 	}
 
+	public org.adempiere.core.domains.models.I_M_InOut getM_InOut() throws RuntimeException
+    {
+		return (org.adempiere.core.domains.models.I_M_InOut)MTable.get(getCtx(), org.adempiere.core.domains.models.I_M_InOut.Table_Name)
+			.getPO(getM_InOut_ID(), get_TrxName());	}
+
+	/** Set Shipment/Receipt.
+		@param M_InOut_ID 
+		Material Shipment Document
+	  */
+	public void setM_InOut_ID (int M_InOut_ID)
+	{
+		if (M_InOut_ID < 1) 
+			set_Value (COLUMNNAME_M_InOut_ID, null);
+		else 
+			set_Value (COLUMNNAME_M_InOut_ID, Integer.valueOf(M_InOut_ID));
+	}
+
+	/** Get Shipment/Receipt.
+		@return Material Shipment Document
+	  */
+	public int getM_InOut_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_M_InOut_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
 	public org.adempiere.core.domains.models.I_M_InOutLine getM_InOutLine() throws RuntimeException
     {
 		return (org.adempiere.core.domains.models.I_M_InOutLine)MTable.get(getCtx(), org.adempiere.core.domains.models.I_M_InOutLine.Table_Name)
@@ -142,6 +170,29 @@ public class X_M_InOutLineMA extends PO implements I_M_InOutLineMA, I_Persistent
     {
         return new KeyNamePair(get_ID(), String.valueOf(getM_InOutLine_ID()));
     }
+
+	/** Set Shipment/Receipt Line Allocation.
+		@param M_InOutLineMA_ID 
+		Material allocation of the line by attribute set instance
+	  */
+	public void setM_InOutLineMA_ID (int M_InOutLineMA_ID)
+	{
+		if (M_InOutLineMA_ID < 1) 
+			set_ValueNoCheck (COLUMNNAME_M_InOutLineMA_ID, null);
+		else 
+			set_ValueNoCheck (COLUMNNAME_M_InOutLineMA_ID, Integer.valueOf(M_InOutLineMA_ID));
+	}
+
+	/** Get Shipment/Receipt Line Allocation.
+		@return Material allocation of the line by attribute set instance
+	  */
+	public int getM_InOutLineMA_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_M_InOutLineMA_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
 
 	/** Set Movement Quantity.
 		@param MovementQty 

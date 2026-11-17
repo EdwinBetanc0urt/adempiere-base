@@ -6,9 +6,9 @@ CREATE OR REPLACE FUNCTION addyears(
 	datetime timestamp with time zone,
 	years numeric)
     RETURNS date
-    LANGUAGE 'plpgsql'
+    LANGUAGE plpgsql STABLE
     COST 100.0
-    VOLATILE 
+
 AS $function$
 /******************************************************************************
  * Product: Adempiere ERP & CRM Smart Business Solution                       *

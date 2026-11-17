@@ -64,6 +64,21 @@ public interface I_C_ProjectIssueMA
 	  */
 	public int getAD_Org_ID();
 
+    /** Column name C_Project_ID */
+    public static final String COLUMNNAME_C_Project_ID = "C_Project_ID";
+
+	/** Set Project.
+	  * Financial Project
+	  */
+	public void setC_Project_ID (int C_Project_ID);
+
+	/** Get Project.
+	  * Financial Project
+	  */
+	public int getC_Project_ID();
+
+	public org.adempiere.core.domains.models.I_C_Project getC_Project() throws RuntimeException;
+
     /** Column name C_ProjectIssue_ID */
     public static final String COLUMNNAME_C_ProjectIssue_ID = "C_ProjectIssue_ID";
 
@@ -78,6 +93,19 @@ public interface I_C_ProjectIssueMA
 	public int getC_ProjectIssue_ID();
 
 	public org.adempiere.core.domains.models.I_C_ProjectIssue getC_ProjectIssue() throws RuntimeException;
+
+    /** Column name C_ProjectIssueMA_ID */
+    public static final String COLUMNNAME_C_ProjectIssueMA_ID = "C_ProjectIssueMA_ID";
+
+	/** Set Project Issue Allocation.
+	  * Material allocation of the line by attribute set instance
+	  */
+	public void setC_ProjectIssueMA_ID (int C_ProjectIssueMA_ID);
+
+	/** Get Project Issue Allocation.
+	  * Material allocation of the line by attribute set instance
+	  */
+	public int getC_ProjectIssueMA_ID();
 
     /** Column name Created */
     public static final String COLUMNNAME_Created = "Created";

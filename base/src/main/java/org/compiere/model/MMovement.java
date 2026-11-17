@@ -19,6 +19,7 @@ package org.compiere.model;
 import org.adempiere.core.domains.models.I_M_MovementConfirm;
 import org.adempiere.core.domains.models.I_M_MovementLine;
 import org.adempiere.core.domains.models.X_M_Movement;
+import org.adempiere.engine.ManualAllocation;
 import org.adempiere.exceptions.AdempiereException;
 import org.compiere.process.DocAction;
 import org.compiere.process.DocumentEngine;
@@ -422,6 +423,7 @@ public class MMovement extends X_M_Movement implements DocAction , DocumentRever
 				{
 					MMovementLineMA movementLineMAS[] = MMovementLineMA.get(getCtx(),
 							movementLine.getM_MovementLine_ID(), get_TrxName());
+					boolean isManualAllocation = ManualAllocation.isManualAllocation(movementLine);
 					for (int j = 0; j < movementLineMAS.length; j++)
 					{
 						MMovementLineMA movementLineMA = movementLineMAS[j];
@@ -429,8 +431,9 @@ public class MMovement extends X_M_Movement implements DocAction , DocumentRever
 						MLocator locator = new MLocator (getCtx(), movementLine.getM_Locator_ID(), get_TrxName());
 						MLocator locatorTo = new MLocator (getCtx(), movementLine.getM_LocatorTo_ID(), get_TrxName());
 						int attributeSetInstanceToId = movementLine.getM_AttributeSetInstanceTo_ID();
-						//only can be same asi if locator is different
-						if (attributeSetInstanceToId == 0 && movementLine.getM_Locator_ID() != movementLine.getM_LocatorTo_ID())
+						//only can be same asi if locator is different, a manual allocation always keeps the instance of the lot
+						if (attributeSetInstanceToId == 0
+								&& (isManualAllocation || movementLine.getM_Locator_ID() != movementLine.getM_LocatorTo_ID()))
 						{
 							attributeSetInstanceToId = movementLineMA.getM_AttributeSetInstance_ID();
 						}
@@ -519,6 +522,12 @@ public class MMovement extends X_M_Movement implements DocAction , DocumentRever
 	 */
 	private void checkMaterialPolicy(MMovementLine line)
 	{
+		//	Manual allocation: validate and keep the allocations entered by the user
+		if (ManualAllocation.isManualAllocation(line)) {
+			ManualAllocation.validate(line, line.getM_Product_ID(), line.getM_AttributeSetInstance_ID(), line.getMovementQty(),
+					Arrays.asList(MMovementLineMA.get(getCtx(), line.getM_MovementLine_ID(), get_TrxName())));
+			return;
+		}
 		int no = MMovementLineMA.deleteMovementLineMA(line.getM_MovementLine_ID(), get_TrxName());
 		if (no > 0)
 			log.config("Delete old #" + no);

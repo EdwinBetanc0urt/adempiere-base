@@ -18,6 +18,7 @@ package org.compiere.model;
 
 import org.adempiere.core.domains.models.I_M_InventoryLine;
 import org.adempiere.core.domains.models.X_M_Inventory;
+import org.adempiere.engine.ManualAllocation;
 import org.adempiere.exceptions.PeriodClosedException;
 import org.compiere.process.DocAction;
 import org.compiere.process.DocumentEngine;
@@ -32,6 +33,7 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
@@ -432,11 +434,13 @@ public class MInventory extends X_M_Inventory implements DocAction, DocumentReve
 				{
 					MInventoryLineMA mas[] = MInventoryLineMA.get(getCtx(),
 							line.getM_InventoryLine_ID(), get_TrxName());
+					//	Automatic allocations have the opposite sign of the line, manual ones the same sign
+					boolean isManualAllocation = ManualAllocation.isManualAllocation(line);
 
 					for (int j = 0; j < mas.length; j++)
 					{
 						MInventoryLineMA ma = mas[j];
-						BigDecimal QtyMA = ma.getMovementQty();
+						BigDecimal QtyMA = isManualAllocation ? ma.getMovementQty().negate() : ma.getMovementQty();
 						BigDecimal QtyNew = QtyMA.add(qtyDiff);
 						log.fine("Diff=" + qtyDiff 
 								+ " - Instance OnHand=" + QtyMA + "->" + QtyNew);
@@ -559,6 +563,12 @@ public class MInventory extends X_M_Inventory implements DocAction, DocumentReve
 	 */
 	private void checkMaterialPolicy(MInventoryLine line, BigDecimal qtyDiff)
 	{
+		//	Manual allocation: validate and keep the allocations entered by the user (same sign as qtyDiff)
+		if (ManualAllocation.isManualAllocation(line)) {
+			ManualAllocation.validate(line, line.getM_Product_ID(), line.getM_AttributeSetInstance_ID(), qtyDiff,
+					Arrays.asList(MInventoryLineMA.get(getCtx(), line.getM_InventoryLine_ID(), get_TrxName())));
+			return;
+		}
 		int no = MInventoryLineMA.deleteInventoryLineMA(line.getM_InventoryLine_ID(), get_TrxName());
 		if (no > 0)
 			log.config("Delete old #" + no);

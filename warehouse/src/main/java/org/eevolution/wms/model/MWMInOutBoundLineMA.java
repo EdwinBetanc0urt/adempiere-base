@@ -30,6 +30,7 @@ package org.eevolution.wms.model;
 
 import org.adempiere.core.domains.models.X_WM_InOutBoundLineMA;
 import org.compiere.util.CLogger;
+import org.compiere.util.DB;
 
 import java.sql.ResultSet;
 import java.util.Properties;
@@ -83,6 +84,24 @@ public class MWMInOutBoundLineMA extends X_WM_InOutBoundLineMA
 	{
 		super(ctx, rs, trxName);
 	}	//	MAsset
+
+	/**
+	 * 	Before Save: keep the reference to the inbound/outbound order of the line
+	 *	@param newRecord new
+	 *	@return true
+	 */
+	@Override
+	protected boolean beforeSave (boolean newRecord)
+	{
+		if (getWM_InOutBoundLine_ID() > 0
+				&& (newRecord || is_ValueChanged(COLUMNNAME_WM_InOutBoundLine_ID) || getWM_InOutBound_ID() <= 0))
+		{
+			int headerId = DB.getSQLValueEx(get_TrxName(),
+					"SELECT WM_InOutBound_ID FROM WM_InOutBoundLine WHERE WM_InOutBoundLine_ID=?", getWM_InOutBoundLine_ID());
+			setWM_InOutBound_ID(headerId);
+		}
+		return true;
+	}	//	beforeSave
 
 	/**
 	 * 	String representation

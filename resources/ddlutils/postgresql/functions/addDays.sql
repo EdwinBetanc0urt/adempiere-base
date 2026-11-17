@@ -30,14 +30,14 @@ BEGIN
 	duration = days || ' day';	 
 	return cast(date_trunc('day',datetime) + cast(duration as interval) as date);
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql STABLE;
 
 CREATE OR REPLACE FUNCTION subtractdays (day TIMESTAMP WITH TIME ZONE, days NUMERIC)
 RETURNS DATE AS $$
 BEGIN
     RETURN addDays(day,(days * -1));
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql STABLE;
 
 -- Function: adddays(interval, numeric)
 
@@ -50,7 +50,7 @@ BEGIN
 RETURN ( EXTRACT( EPOCH FROM ( inter ) ) / 86400 ) + days;
 END;
 $BODY$
-  LANGUAGE plpgsql VOLATILE
+  LANGUAGE plpgsql STABLE
   COST 100;
 ALTER FUNCTION adddays(interval, numeric) OWNER TO adempiere;
 
@@ -65,7 +65,7 @@ BEGIN
 RETURN ( EXTRACT( EPOCH FROM ( inter ) ) / 86400 ) - days;
 END;
 $BODY$
-  LANGUAGE plpgsql VOLATILE
+  LANGUAGE plpgsql STABLE
   COST 100;
 ALTER FUNCTION subtractdays(interval, numeric) OWNER TO adempiere;
 

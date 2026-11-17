@@ -355,4 +355,22 @@ public class X_C_LandedCostAllocation extends PO implements I_C_LandedCostAlloca
 	{
 		return (String)get_Value(COLUMNNAME_UUID);
 	}
+
+	/** Set Landed Cost. */
+	public void setC_LandedCost_ID (int C_LandedCost_ID)
+	{
+		if (C_LandedCost_ID < 1) 
+			set_Value (COLUMNNAME_C_LandedCost_ID, null);
+		else 
+			set_Value (COLUMNNAME_C_LandedCost_ID, Integer.valueOf(C_LandedCost_ID));
+	}
+
+	/** Get Landed Cost. */
+	public int getC_LandedCost_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_C_LandedCost_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
 }

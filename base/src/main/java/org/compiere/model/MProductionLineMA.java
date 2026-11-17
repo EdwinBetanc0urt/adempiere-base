@@ -92,4 +92,22 @@ public class MProductionLineMA extends X_M_ProductionLineMA {
 		return retValue;
 		}
 
+	/**
+	 * 	Before Save: keep the reference to the document header of the line
+	 *	@param newRecord new
+	 *	@return true
+	 */
+	@Override
+	protected boolean beforeSave (boolean newRecord)
+	{
+		if (getM_ProductionLine_ID() > 0
+				&& (newRecord || is_ValueChanged(COLUMNNAME_M_ProductionLine_ID) || getM_Production_ID() <= 0))
+		{
+			int headerId = DB.getSQLValueEx(get_TrxName(),
+					"SELECT M_Production_ID FROM M_ProductionLine WHERE M_ProductionLine_ID=?", getM_ProductionLine_ID());
+			setM_Production_ID(headerId);
+		}
+		return true;
+	}	//	beforeSave
+
 }

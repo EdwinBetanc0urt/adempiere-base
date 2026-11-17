@@ -108,6 +108,21 @@ public interface I_M_ProductionLineMA
 
 	public I_M_AttributeSetInstance getM_AttributeSetInstance() throws RuntimeException;
 
+    /** Column name M_Production_ID */
+    public static final String COLUMNNAME_M_Production_ID = "M_Production_ID";
+
+	/** Set Production.
+	  * Plan for producing a product
+	  */
+	public void setM_Production_ID (int M_Production_ID);
+
+	/** Get Production.
+	  * Plan for producing a product
+	  */
+	public int getM_Production_ID();
+
+	public org.adempiere.core.domains.models.I_M_Production getM_Production() throws RuntimeException;
+
     /** Column name M_ProductionLine_ID */
     public static final String COLUMNNAME_M_ProductionLine_ID = "M_ProductionLine_ID";
 
@@ -122,6 +137,19 @@ public interface I_M_ProductionLineMA
 	public int getM_ProductionLine_ID();
 
 	public org.adempiere.core.domains.models.I_M_ProductionLine getM_ProductionLine() throws RuntimeException;
+
+    /** Column name M_ProductionLineMA_ID */
+    public static final String COLUMNNAME_M_ProductionLineMA_ID = "M_ProductionLineMA_ID";
+
+	/** Set Production Line Allocation.
+	  * Material allocation of the line by attribute set instance
+	  */
+	public void setM_ProductionLineMA_ID (int M_ProductionLineMA_ID);
+
+	/** Get Production Line Allocation.
+	  * Material allocation of the line by attribute set instance
+	  */
+	public int getM_ProductionLineMA_ID();
 
     /** Column name MovementQty */
     public static final String COLUMNNAME_MovementQty = "MovementQty";

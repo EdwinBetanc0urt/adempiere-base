@@ -29,7 +29,10 @@
 
 package org.eevolution.wms.process;
 
+import org.adempiere.core.domains.models.I_WM_InOutBoundLineMA;
 import org.adempiere.core.domains.models.X_C_Order;
+import org.adempiere.core.domains.models.X_WM_InOutBoundLineMA;
+import org.adempiere.engine.ManualAllocation;
 import org.adempiere.exceptions.AdempiereException;
 import org.compiere.model.*;
 import org.compiere.process.ProcessInfo;
@@ -210,6 +213,8 @@ public class GenerateShipmentOutBound extends GenerateShipmentOutBoundAbstract {
                                     shipmentLine.setM_AttributeSetInstance_ID(outboundLine.getM_AttributeSetInstance_ID());
                                     shipmentLine.setWM_InOutBoundLine_ID(outboundLine.getWM_InOutBoundLine_ID());
                                     shipmentLine.saveEx();
+                                    //  Lots preassigned in the outbound order line are kept as manual allocation
+                                    copyOutboundAllocations(outboundLine, shipmentLine);
                                 });
                                 MInOut shipment = maybeShipment.get();
                                 shipment.set_TrxName(transactionName);
@@ -350,6 +355,38 @@ public class GenerateShipmentOutBound extends GenerateShipmentOutBoundAbstract {
         } finally {
             pool.shutdown();
         }
+    }
+
+    /**
+     * Copy the allocations of the outbound order line (WM_InOutBoundLineMA) not yet shipped to the
+     * shipment line (M_InOutLineMA) and mark the shipment line as manual allocation, so the material
+     * policy keeps them when the shipment is completed.
+     * @param outboundLine outbound order line
+     * @param shipmentLine shipment line
+     */
+    private void copyOutboundAllocations(MWMInOutBoundLine outboundLine, MInOutLine shipmentLine) {
+        List<X_WM_InOutBoundLineMA> allocations = new Query(outboundLine.getCtx(), I_WM_InOutBoundLineMA.Table_Name,
+                I_WM_InOutBoundLineMA.COLUMNNAME_WM_InOutBoundLine_ID + "=? AND COALESCE("
+                        + I_WM_InOutBoundLineMA.COLUMNNAME_M_InOutLine_ID + ", 0) = 0",
+                shipmentLine.get_TrxName())
+                .setClient_ID()
+                .setOnlyActiveRecords(true)
+                .setParameters(outboundLine.getWM_InOutBoundLine_ID())
+                .setOrderBy(I_WM_InOutBoundLineMA.COLUMNNAME_WM_InOutBoundLineMA_ID)
+                .list();
+        if (allocations.isEmpty()) {
+            return;
+        }
+        shipmentLine.setM_AttributeSetInstance_ID(0);
+        ManualAllocation.setManualAllocation(shipmentLine, true);
+        shipmentLine.saveEx();
+        allocations.forEach(allocation -> {
+            MInOutLineMA shipmentAllocation = new MInOutLineMA(shipmentLine, allocation.getM_AttributeSetInstance_ID(), allocation.getMovementQty());
+            shipmentAllocation.saveEx();
+            //  The allocation is consumed by this shipment line
+            allocation.setM_InOutLine_ID(shipmentLine.getM_InOutLine_ID());
+            allocation.saveEx();
+        });
     }
 
     private BigDecimal getSalesOrderQtyToDelivery(MWMInOutBoundLine outboundLine) {

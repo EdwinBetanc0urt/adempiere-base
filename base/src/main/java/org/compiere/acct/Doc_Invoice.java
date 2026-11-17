@@ -810,104 +810,26 @@ public class Doc_Invoice extends Doc
 	
 	
 	/**
-	 * 	Create Landed Cost accounting & Cost lines
+	 * 	Create Landed Cost clearing line.
+	 * 	The invoice line is posted against the landed cost clearing account; the
+	 * 	landed cost document reverses it into inventory.
 	 *	@param as accounting schema
 	 *	@param fact fact
 	 *	@param line document line
 	 *	@param isDebit DR entry (normal api)
-	 *	@return true if landed costs were created
+	 *	@return true if the line has landed cost drafts
 	 */
 	private boolean landedCost (MAcctSchema as, Fact fact, DocLine line, boolean isDebit)
 	{
-		int invoiceLineId = line.get_ID();
-		MLandedCostAllocation[] landedCostAllocations = MLandedCostAllocation.getOfInvoiceLine(
-			getCtx(), invoiceLineId, getTrxName());
-		if (landedCostAllocations.length == 0)
+		if (MInvoiceLandedCost.getOfInvoiceLine(getCtx(), line.get_ID(), getTrxName()).isEmpty())
 			return false;
-
-		BigDecimal totalBase = Arrays.stream(landedCostAllocations)
-				.map(MLandedCostAllocation::getBase)
-				.reduce(BigDecimal.ZERO, BigDecimal::add);
-
-		//	Create New
-		MInvoiceLine invoiceLine = new MInvoiceLine (getCtx(), invoiceLineId, getTrxName());
-		Arrays.stream(landedCostAllocations)
-				.filter(landedCostAllocation -> landedCostAllocation.getBase().signum() != 0) // only cost allocation with base > 0
-				.forEach(landedCostAllocation -> {
-			BigDecimal percent = totalBase.signum() != 0
-					? landedCostAllocation.getBase().divide(totalBase, RoundingMode.HALF_UP)
-					: BigDecimal.ZERO;
-			String desc = invoiceLine.getDescription();
-			if (desc == null)
-				desc = percent + "%";
-			else
-				desc += " - " + percent + "%";
-			if (line.getDescription() != null)
-				desc += " - " + line.getDescription();
-			
-			//	Accounting
-			ProductCost productCost = new ProductCost (Env.getCtx(),
-				landedCostAllocation.getM_Product_ID(), landedCostAllocation.getM_AttributeSetInstance_ID(), getTrxName());
-			BigDecimal debitAmount = BigDecimal.ZERO;
-			BigDecimal creditAmount = BigDecimal.ZERO;;
-			FactLine factLine = null;
-			MCostType costType = MCostType.get(as, landedCostAllocation.getM_Product_ID() , landedCostAllocation.getAD_Org_ID());
-			if(MCostType.COSTINGMETHOD_AverageInvoice.equals(costType.getCostingMethod()))
-			{
-				//Cost to inventory asset
-				BigDecimal assetAmount = Optional.ofNullable(MCostDetail.getByDocLineLandedCost(
-						landedCostAllocation,
-						as.getC_AcctSchema_ID(),
-						costType.get_ID())).orElseGet(() -> BigDecimal.ZERO);
-				if (assetAmount.signum() != 0)
-				{
-					if (isDebit)
-						debitAmount = assetAmount;
-					else
-						creditAmount = assetAmount.negate();
-
-					factLine = fact.createLine(line, productCost.getAccount(ProductCost.ACCTTYPE_P_Asset, as),
-							as.getC_Currency_ID(), debitAmount, creditAmount);
-					factLine.setDescription(desc + " " + landedCostAllocation.getM_CostElement().getName());
-					factLine.setM_Product_ID(landedCostAllocation.getM_Product_ID());
-				}
-				//cost to Cost Adjustment
-				BigDecimal costAllocation =  landedCostAllocation.getPriceActual().multiply(landedCostAllocation.getQty());
-				BigDecimal costAdjustment =  costAllocation.subtract(assetAmount);
-				setIsMultiCurrency(landedCostAllocation.getC_Currency_ID()!=as.getC_Currency_ID());
-				if (costAdjustment.signum() != 0) {
-					if (isDebit)
-						debitAmount = costAdjustment;
-					else
-						creditAmount = costAdjustment.negate();
-
-					//	costAdjustment ya esta en moneda base (getPriceActual() convierte a
-					//	as.getC_Currency_ID()), asi que la linea debe crearse en esa moneda.
-					//	Usar getC_Currency_ID() (moneda de la factura) hacia que FactLine.convert()
-					//	reconvirtiera el importe una segunda vez, inflandolo por la tasa de cambio.
-					factLine = fact.createLine(line, productCost.getAccount(ProductCost.ACCTTYPE_P_CostAdjustment,as),
-							as.getC_Currency_ID(), debitAmount, creditAmount);
-				}
-			}
-			else
-			{
-				BigDecimal amount = landedCostAllocation.getPriceActual().multiply(landedCostAllocation.getQty());
-				if (amount.signum() != 0) {
-					if (isDebit)
-						debitAmount = amount;
-					else
-						creditAmount = amount.negate();
-					factLine = fact.createLine (line, productCost.getAccount(ProductCost.ACCTTYPE_P_CostAdjustment, as),
-							as.getC_Currency_ID(), debitAmount, creditAmount);
-				}
-			}
-
-			if (factLine != null) {
-				factLine.setDescription(desc + " " + landedCostAllocation.getM_CostElement().getName());
-				factLine.setM_Product_ID(landedCostAllocation.getM_Product_ID());
-			}
-		});
-		log.config("Created #" + landedCostAllocations.length);
+		BigDecimal amount = line.getAmtSource();
+		if (amount.signum() == 0)
+			return true;
+		FactLine factLine = fact.createLine (line, new ProductCost(getCtx(), line.getM_Product_ID(), 0, getTrxName()).getAccount(ProductCost.ACCTTYPE_P_LandedCostClearing, as),
+			getC_Currency_ID(), isDebit ? amount : null, isDebit ? null : amount);
+		if (factLine != null && line.getDescription() != null)
+			factLine.setDescription(line.getDescription());
 		return true;
 	}	//	landedCosts
 

@@ -52,6 +52,8 @@ public class X_S_ResourceType extends PO implements I_S_ResourceType, I_Persiste
 			setIsDateSlot (false);
 			setIsSingleAssignment (false);
 			setIsTimeSlot (false);
+			setIsValidateAvailability (true);
+// Y
 			setM_Product_Category_ID (0);
 			setName (null);
 			setOnFriday (true);
@@ -304,6 +306,30 @@ public class X_S_ResourceType extends PO implements I_S_ResourceType, I_Persiste
 	public boolean isTimeSlot ()
 	{
 		Object oo = get_Value(COLUMNNAME_IsTimeSlot);
+		if (oo != null)
+		{
+			 if (oo instanceof Boolean)
+				 return ((Boolean)oo).booleanValue();
+			return "Y".equals(oo);
+		}
+		return false;
+	}
+
+	/** Set Validate Availability.
+		@param IsValidateAvailability
+		Validate that resources of this type are free before allocating them
+	  */
+	public void setIsValidateAvailability (boolean IsValidateAvailability)
+	{
+		set_Value (COLUMNNAME_IsValidateAvailability, Boolean.valueOf(IsValidateAvailability));
+	}
+
+	/** Get Validate Availability.
+		@return Validate that resources of this type are free before allocating them
+	  */
+	public boolean isValidateAvailability ()
+	{
+		Object oo = get_Value(COLUMNNAME_IsValidateAvailability);
 		if (oo != null)
 		{
 			 if (oo instanceof Boolean)

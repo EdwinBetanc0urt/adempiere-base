@@ -106,6 +106,34 @@ public class X_M_MovementLineMA extends PO implements I_M_MovementLineMA, I_Pers
 		return ii.intValue();
 	}
 
+	public org.adempiere.core.domains.models.I_M_Movement getM_Movement() throws RuntimeException
+    {
+		return (org.adempiere.core.domains.models.I_M_Movement)MTable.get(getCtx(), org.adempiere.core.domains.models.I_M_Movement.Table_Name)
+			.getPO(getM_Movement_ID(), get_TrxName());	}
+
+	/** Set Inventory Move.
+		@param M_Movement_ID 
+		Movement of Inventory
+	  */
+	public void setM_Movement_ID (int M_Movement_ID)
+	{
+		if (M_Movement_ID < 1) 
+			set_Value (COLUMNNAME_M_Movement_ID, null);
+		else 
+			set_Value (COLUMNNAME_M_Movement_ID, Integer.valueOf(M_Movement_ID));
+	}
+
+	/** Get Inventory Move.
+		@return Movement of Inventory
+	  */
+	public int getM_Movement_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_M_Movement_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
 	public org.adempiere.core.domains.models.I_M_MovementLine getM_MovementLine() throws RuntimeException
     {
 		return (org.adempiere.core.domains.models.I_M_MovementLine)MTable.get(getCtx(), org.adempiere.core.domains.models.I_M_MovementLine.Table_Name)
@@ -141,6 +169,29 @@ public class X_M_MovementLineMA extends PO implements I_M_MovementLineMA, I_Pers
     {
         return new KeyNamePair(get_ID(), String.valueOf(getM_MovementLine_ID()));
     }
+
+	/** Set Move Line Allocation.
+		@param M_MovementLineMA_ID 
+		Material allocation of the line by attribute set instance
+	  */
+	public void setM_MovementLineMA_ID (int M_MovementLineMA_ID)
+	{
+		if (M_MovementLineMA_ID < 1) 
+			set_ValueNoCheck (COLUMNNAME_M_MovementLineMA_ID, null);
+		else 
+			set_ValueNoCheck (COLUMNNAME_M_MovementLineMA_ID, Integer.valueOf(M_MovementLineMA_ID));
+	}
+
+	/** Get Move Line Allocation.
+		@return Material allocation of the line by attribute set instance
+	  */
+	public int getM_MovementLineMA_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_M_MovementLineMA_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
 
 	/** Set Movement Quantity.
 		@param MovementQty 

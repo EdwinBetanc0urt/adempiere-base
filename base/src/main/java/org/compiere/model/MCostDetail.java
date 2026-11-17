@@ -892,7 +892,16 @@ public class MCostDetail extends X_M_CostDetail
 		//
 		String sql = null;
 		int param1 = -1;
-		if (getC_InvoiceLine_ID() > 0)
+		if (getC_LandedCostAllocation_ID() > 0)
+		{
+			sql = "SELECT COALESCE(lc.DateAcct, i.DateAcct) FROM C_LandedCostAllocation la"
+				+" INNER JOIN C_InvoiceLine il ON (il.C_InvoiceLine_ID=la.C_InvoiceLine_ID)"
+				+" INNER JOIN C_Invoice i ON (i.C_Invoice_ID=il.C_Invoice_ID)"
+				+" LEFT JOIN C_LandedCost lc ON (lc.C_LandedCost_ID=la.C_LandedCost_ID)"
+				+" WHERE la.C_LandedCostAllocation_ID=?";
+			param1 = getC_LandedCostAllocation_ID();
+		}
+		else if (getC_InvoiceLine_ID() > 0)
 		{
 			sql = "SELECT i.DateAcct FROM C_InvoiceLine il"
 				+" INNER JOIN C_Invoice i ON (i.C_Invoice_ID=il.C_Invoice_ID)"
@@ -927,14 +936,7 @@ public class MCostDetail extends X_M_CostDetail
 				+" WHERE il.M_MovementLine_ID=?";
 			param1 = getM_MovementLine_ID();
 		}
-		else if (getC_LandedCostAllocation_ID() > 0)
-		{
-			sql = "SELECT i.DateAcct FROM C_Invoice i"
-				+" INNER JOIN C_InvoiceLine il ON (i.C_Invoice_ID=il.C_Invoice_ID)"
-				+" INNER JOIN C_LandedCostAllocation la ON (il.C_InvoiceLine_ID=la.C_InvoiceLine_ID)"
-				+" WHERE la.C_LandedCostAllocation_ID=?";
-			param1 = getC_LandedCostAllocation_ID();
-		}else if (getM_ProductionLine_ID() > 0)
+		else if (getM_ProductionLine_ID() > 0)
 		{
 			sql = "SELECT p.MovementDate FROM M_ProductionLine pl"
 				+" LEFT JOIN M_ProductionPlan pp ON (pl.M_ProductionPlan_ID = pp.M_ProductionPlan_ID)"
@@ -952,7 +954,16 @@ public class MCostDetail extends X_M_CostDetail
 	 */
 	private void rePosted()
 	{		
-		if (getC_InvoiceLine_ID() > 0)
+		if (getC_LandedCostAllocation_ID() > 0)
+		{
+			int id = DB.getSQLValue(get_TrxName(), "SELECT C_LandedCost_ID FROM C_LandedCostAllocation WHERE C_LandedCostAllocation_ID=?", getC_LandedCostAllocation_ID());
+			if(id > 0)
+			{
+				DB.executeUpdate("UPDATE C_LandedCost SET Posted='N', Processing='N', ProcessedOn=null WHERE C_LandedCost_ID=? AND Processed='Y'", id, get_TrxName());
+				MFactAcct.deleteEx (MLandedCost.Table_ID, id, get_TrxName());
+			}
+		}
+		else if (getC_InvoiceLine_ID() > 0)
 		{
 			int id = DB.getSQLValue(get_TrxName(), "SELECT M_MatchInv_ID FROM M_MatchInv WHERE C_InvoiceLine_ID=?", getC_InvoiceLine_ID());
 			if(id > 0)
@@ -996,10 +1007,6 @@ public class MCostDetail extends X_M_CostDetail
 				DB.executeUpdate("UPDATE M_Movement SET Posted='N', Processing='N', ProcessedOn=null WHERE M_Movement_ID=? AND Processed='Y'", id, get_TrxName());
 				MFactAcct.deleteEx (MMovement.Table_ID, id, get_TrxName());
 			}
-		}
-		else if (getC_LandedCostAllocation_ID() > 0)
-		{
-			//Is necessary the logic when exist a landen cost
 		}
 	}
 

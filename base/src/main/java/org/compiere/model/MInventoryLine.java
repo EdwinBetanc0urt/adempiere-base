@@ -25,6 +25,7 @@ import java.util.Properties;
 import org.adempiere.core.domains.models.I_M_InventoryLine;
 import org.adempiere.core.domains.models.X_M_InventoryLine;
 import org.adempiere.engine.IDocumentLine;
+import org.adempiere.engine.ManualAllocation;
 import org.compiere.process.DocumentReversalLineEnable;
 import org.compiere.util.DB;
 import org.compiere.util.Env;
@@ -256,8 +257,8 @@ public class MInventoryLine extends X_M_InventoryLine implements IDocumentLine ,
 		}
 		if (newRecord && m_isManualEntry)
 		{
-			//	Product requires ASI
-			if (getM_AttributeSetInstance_ID() == 0)
+			//	Product requires ASI (with manual allocation the instances are in M_InventoryLineMA)
+			if (getM_AttributeSetInstance_ID() == 0 && !ManualAllocation.isManualAllocation(this))
 			{
 				MProduct product = MProduct.get(getCtx(), getM_Product_ID());
 				MAttributeSet.validateAttributeSetInstanceMandatory(product, Table_ID, isSOTrx() , getM_AttributeSetInstance_ID());

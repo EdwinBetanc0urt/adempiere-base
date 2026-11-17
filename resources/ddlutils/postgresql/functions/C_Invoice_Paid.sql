@@ -60,5 +60,5 @@ BEGIN
 	RETURN	ROUND(COALESCE(v_PaymentAmt,0), 2) * v_MultiplierAP;
 END;
 
-$body$ LANGUAGE plpgsql;
+$body$ LANGUAGE plpgsql STABLE;
  	  	 

@@ -19,6 +19,7 @@ package org.adempiere.engine;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
@@ -124,6 +125,15 @@ public class StorageEngine
 			Timestamp MovementDate, 
 			int M_Warehouse_ID)
 	{
+		//	Manual allocation: validate and keep the allocations entered by the user
+		if (ManualAllocation.isManualAllocation((PO) line))
+		{
+			List<PO> allocations = new ArrayList<PO>();
+			for (IInventoryAllocation allocation : getMA(line))
+				allocations.add((PO) allocation);
+			ManualAllocation.validate((PO) line, line.getM_Product_ID(), line.getM_AttributeSetInstance_ID(), line.getMovementQty(), allocations);
+			return;
+		}
 		deleteMA(line);
 
 		//	Incoming Trx
