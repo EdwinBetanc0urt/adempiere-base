@@ -476,7 +476,8 @@ public class CostEngine {
 		BigDecimal costThisLevel = BigDecimal.ZERO;
 		BigDecimal rate = MConversionRate.getRate(
 				model.getC_Currency_ID(), acctSchema.getC_Currency_ID() ,
-				model.getDateAcct(), model.getC_ConversionType_ID() ,
+				model instanceof MLandedCostAllocation ? ((MLandedCostAllocation) model).getConversionDate() : model.getDateAcct(),
+				model.getC_ConversionType_ID() ,
 				model.getAD_Client_ID(), model.getAD_Org_ID());
 		if (rate != null) {
 			if (rate.compareTo(BigDecimal.ONE) == 0)
@@ -712,6 +713,17 @@ public class CostEngine {
 				List<MMatchInv> invoiceMatches = MMatchInv.getInOutLine(line);
 				for (MMatchInv match : invoiceMatches) {
 					if (!clearAccounting(accountSchema, accountSchema.getM_CostType() , match,  transaction.getM_Product_ID() , line.getDateAcct()))
+						return;
+				}
+
+				// get landed cost documents
+				List<MLandedCost> landedCosts = new Query(line.getCtx(), MLandedCost.Table_Name,
+						"EXISTS(SELECT 1 FROM C_LandedCostAllocation lca WHERE lca.C_LandedCost_ID = C_LandedCost.C_LandedCost_ID AND lca.M_InOutLine_ID = ?)",
+						line.get_TrxName())
+					.setParameters(line.getM_InOutLine_ID())
+					.list();
+				for (MLandedCost landedCost : landedCosts) {
+					if (!clearAccounting(accountSchema, accountSchema.getM_CostType() , landedCost,  transaction.getM_Product_ID() , landedCost.getDateAcct()))
 						return;
 				}
 

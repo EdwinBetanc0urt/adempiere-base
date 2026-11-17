@@ -1606,6 +1606,10 @@ public class MInOut extends X_M_InOut implements DocAction , DocumentReversalEna
 			MInOut dropShipment = createDropShipment();
 			if (dropShipment != null)
 				info.append(" - @DropShipment@: @M_InOut_ID@=").append(dropShipment.getDocumentNo());
+
+			//	Landed Cost documents pending against the purchase orders of this receipt
+			if (!isSOTrx())
+				generateLandedCosts();
 		}
 		//	User Validation
 		String valid = ModelValidationEngine.get().fireDocValidate(this, ModelValidator.TIMING_AFTER_COMPLETE);
@@ -1716,6 +1720,27 @@ public class MInOut extends X_M_InOut implements DocAction , DocumentReversalEna
 	 * addDocsPostProcess
 	 * @param doc
 	 */
+	private void generateLandedCosts() {
+		MInvoiceLandedCost.generateForReceipt(this);
+	}
+
+	private boolean voidLandedCosts() {
+		for (MLandedCost landedCost : MLandedCost.getOfReceipt(getCtx(), getM_InOut_ID(), get_TrxName())) {
+			if (landedCost.isReversal() || landedCost.getReversal_ID() > 0)
+				continue;
+			if (!MLandedCost.DOCSTATUS_Completed.equals(landedCost.getDocStatus())
+					&& !MLandedCost.DOCSTATUS_Closed.equals(landedCost.getDocStatus()))
+				continue;
+			landedCost.setDocAction(MLandedCost.DOCACTION_Void);
+			if (!landedCost.processIt(MLandedCost.DOCACTION_Void)) {
+				processMsg = landedCost.getProcessMsg();
+				return false;
+			}
+			landedCost.saveEx();
+		}
+		return true;
+	}
+
 	private void addDocsPostProcess(PO doc) {
 		docsPostProcess.add(doc);
 	}
@@ -2247,6 +2272,8 @@ public class MInOut extends X_M_InOut implements DocAction , DocumentReversalEna
 		if (!isSOTrx())
 		{
 			if (!reverseMatching(reversalDate))
+				return null;
+			if (!voidLandedCosts())
 				return null;
 		}
 		reversal.setC_Order_ID(getC_Order_ID());

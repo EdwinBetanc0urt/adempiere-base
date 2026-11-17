@@ -54,7 +54,7 @@ public class StandardCostingMethod extends AbstractCostingMethod implements
 		if (this.isOpenPeriod)
 			this.dateAccounting = model.getDateAcct();
 		else if (model instanceof MLandedCostAllocation )
-			this.dateAccounting = ((MLandedCostAllocation) model).getC_InvoiceLine().getC_Invoice().getDateAcct();
+			this.dateAccounting = ((MLandedCostAllocation) model).getDateAcct();
 		else if (model instanceof MMatchInv)
 			this.dateAccounting = ((MMatchInv) model).getC_InvoiceLine().getC_Invoice().getDateAcct();
 		else

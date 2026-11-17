@@ -24,7 +24,7 @@ import org.compiere.model.MCostElement;
 import org.compiere.model.MInOut;
 import org.compiere.model.MInOutLine;
 import org.compiere.model.MInvoiceLine;
-import org.compiere.model.MLandedCost;
+import org.compiere.model.MInvoiceLandedCost;
 import org.compiere.model.MProduct;
 import org.compiere.model.Query;
 
@@ -101,7 +101,7 @@ public class GenerateLandedCost extends GenerateLandedCostAbstract {
         if (document == null)
             document = inOutLine.getParent();
 
-        MLandedCost landedCost = new MLandedCost(getCtx(), 0, get_TrxName());
+        MInvoiceLandedCost landedCost = new MInvoiceLandedCost(getCtx(), 0, get_TrxName());
         landedCost.setAD_Org_ID(document.getAD_Org_ID());
         landedCost.setC_InvoiceLine_ID(getRecord_ID());
         landedCost.setM_InOut_ID(document.getM_InOut_ID());
@@ -125,9 +125,9 @@ public class GenerateLandedCost extends GenerateLandedCostAbstract {
         StringBuilder whereClause = new StringBuilder("EXISTS (SELECT T_Selection_ID FROM T_Selection ");
         whereClause.append("WHERE T_Selection.AD_PInstance_ID=? AND T_Selection.T_Selection_ID=M_InOutLine.M_InOutLine_ID ");
         if (isCreateByProduct())
-            whereClause.append("AND NOT EXISTS (SELECT 1 FROM C_LandedCost lc WHERE lc.C_InvoiceLine_ID=? AND lc.M_InOutLine_ID=M_InOutLine.M_InOutLine_ID))");
+            whereClause.append("AND NOT EXISTS (SELECT 1 FROM C_InvoiceLandedCost lc WHERE lc.C_InvoiceLine_ID=? AND lc.M_InOutLine_ID=M_InOutLine.M_InOutLine_ID))");
         else
-            whereClause.append("AND NOT EXISTS (SELECT 1 FROM C_LandedCost lc WHERE lc.C_InvoiceLine_ID=? AND lc.M_InOut_ID=M_InOutLine.M_InOut_ID)) ");
+            whereClause.append("AND NOT EXISTS (SELECT 1 FROM C_InvoiceLandedCost lc WHERE lc.C_InvoiceLine_ID=? AND lc.M_InOut_ID=M_InOutLine.M_InOut_ID)) ");
 
         records = new Query(getCtx(), I_M_InOutLine.Table_Name,
                 whereClause.toString(), get_TrxName()).setClient_ID()

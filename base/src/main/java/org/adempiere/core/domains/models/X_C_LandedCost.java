@@ -18,6 +18,9 @@
 /** Generated Model - DO NOT CHANGE */
 package org.adempiere.core.domains.models;
 
+import java.sql.Timestamp;
+import org.compiere.util.Env;
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.util.Properties;
 import org.compiere.model.I_Persistent;
@@ -358,5 +361,336 @@ public class X_C_LandedCost extends PO implements I_C_LandedCost, I_Persistent
 	public String getUUID () 
 	{
 		return (String)get_Value(COLUMNNAME_UUID);
+	}
+
+	/** DocAction AD_Reference_ID=135 */
+	public static final int DOCACTION_AD_Reference_ID=135;
+	/** Complete = CO */
+	public static final String DOCACTION_Complete = "CO";
+	/** Approve = AP */
+	public static final String DOCACTION_Approve = "AP";
+	/** Reject = RJ */
+	public static final String DOCACTION_Reject = "RJ";
+	/** Post = PO */
+	public static final String DOCACTION_Post = "PO";
+	/** Void = VO */
+	public static final String DOCACTION_Void = "VO";
+	/** Close = CL */
+	public static final String DOCACTION_Close = "CL";
+	/** Reverse - Correct = RC */
+	public static final String DOCACTION_Reverse_Correct = "RC";
+	/** Reverse - Accrual = RA */
+	public static final String DOCACTION_Reverse_Accrual = "RA";
+	/** Invalidate = IN */
+	public static final String DOCACTION_Invalidate = "IN";
+	/** Re-activate = RE */
+	public static final String DOCACTION_Re_Activate = "RE";
+	/** <None> = -- */
+	public static final String DOCACTION_None = "--";
+	/** Prepare = PR */
+	public static final String DOCACTION_Prepare = "PR";
+	/** Unlock = XL */
+	public static final String DOCACTION_Unlock = "XL";
+	/** Wait Complete = WC */
+	public static final String DOCACTION_WaitComplete = "WC";
+
+	/** DocStatus AD_Reference_ID=131 */
+	public static final int DOCSTATUS_AD_Reference_ID=131;
+	/** Drafted = DR */
+	public static final String DOCSTATUS_Drafted = "DR";
+	/** Completed = CO */
+	public static final String DOCSTATUS_Completed = "CO";
+	/** Approved = AP */
+	public static final String DOCSTATUS_Approved = "AP";
+	/** Not Approved = NA */
+	public static final String DOCSTATUS_NotApproved = "NA";
+	/** Voided = VO */
+	public static final String DOCSTATUS_Voided = "VO";
+	/** Invalid = IN */
+	public static final String DOCSTATUS_Invalid = "IN";
+	/** Reversed = RE */
+	public static final String DOCSTATUS_Reversed = "RE";
+	/** Closed = CL */
+	public static final String DOCSTATUS_Closed = "CL";
+	/** Unknown = ?? */
+	public static final String DOCSTATUS_Unknown = "??";
+	/** In Progress = IP */
+	public static final String DOCSTATUS_InProgress = "IP";
+	/** Waiting Payment = WP */
+	public static final String DOCSTATUS_WaitingPayment = "WP";
+	/** Waiting Confirmation = WC */
+	public static final String DOCSTATUS_WaitingConfirmation = "WC";
+
+	/** Set Invoice. */
+	public void setC_Invoice_ID (int C_Invoice_ID)
+	{
+		if (C_Invoice_ID < 1) 
+			set_Value (COLUMNNAME_C_Invoice_ID, null);
+		else 
+			set_Value (COLUMNNAME_C_Invoice_ID, Integer.valueOf(C_Invoice_ID));
+	}
+
+	/** Get Invoice. */
+	public int getC_Invoice_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_C_Invoice_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
+	/** Set Order. */
+	public void setC_Order_ID (int C_Order_ID)
+	{
+		if (C_Order_ID < 1) 
+			set_Value (COLUMNNAME_C_Order_ID, null);
+		else 
+			set_Value (COLUMNNAME_C_Order_ID, Integer.valueOf(C_Order_ID));
+	}
+
+	/** Get Order. */
+	public int getC_Order_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_C_Order_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
+	/** Set Invoice Landed Cost. */
+	public void setC_InvoiceLandedCost_ID (int C_InvoiceLandedCost_ID)
+	{
+		if (C_InvoiceLandedCost_ID < 1) 
+			set_Value (COLUMNNAME_C_InvoiceLandedCost_ID, null);
+		else 
+			set_Value (COLUMNNAME_C_InvoiceLandedCost_ID, Integer.valueOf(C_InvoiceLandedCost_ID));
+	}
+
+	/** Get Invoice Landed Cost. */
+	public int getC_InvoiceLandedCost_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_C_InvoiceLandedCost_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
+	/** Set Document Type. */
+	public void setC_DocType_ID (int C_DocType_ID)
+	{
+		if (C_DocType_ID < 1) 
+			set_Value (COLUMNNAME_C_DocType_ID, null);
+		else 
+			set_Value (COLUMNNAME_C_DocType_ID, Integer.valueOf(C_DocType_ID));
+	}
+
+	/** Get Document Type. */
+	public int getC_DocType_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_C_DocType_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
+	/** Set Document No. */
+	public void setDocumentNo (String DocumentNo)
+	{
+		set_Value (COLUMNNAME_DocumentNo, DocumentNo);
+	}
+
+	/** Get Document No. */
+	public String getDocumentNo () 
+	{
+		return (String)get_Value(COLUMNNAME_DocumentNo);
+	}
+
+	/** Set Document Date. */
+	public void setDateDoc (Timestamp DateDoc)
+	{
+		set_Value (COLUMNNAME_DateDoc, DateDoc);
+	}
+
+	/** Get Document Date. */
+	public Timestamp getDateDoc () 
+	{
+		return (Timestamp)get_Value(COLUMNNAME_DateDoc);
+	}
+
+	/** Set Account Date. */
+	public void setDateAcct (Timestamp DateAcct)
+	{
+		set_Value (COLUMNNAME_DateAcct, DateAcct);
+	}
+
+	/** Get Account Date. */
+	public Timestamp getDateAcct () 
+	{
+		return (Timestamp)get_Value(COLUMNNAME_DateAcct);
+	}
+
+	/** Set Document Status. */
+	public void setDocStatus (String DocStatus)
+	{
+		set_Value (COLUMNNAME_DocStatus, DocStatus);
+	}
+
+	/** Get Document Status. */
+	public String getDocStatus () 
+	{
+		return (String)get_Value(COLUMNNAME_DocStatus);
+	}
+
+	/** Set Document Action. */
+	public void setDocAction (String DocAction)
+	{
+		set_Value (COLUMNNAME_DocAction, DocAction);
+	}
+
+	/** Get Document Action. */
+	public String getDocAction () 
+	{
+		return (String)get_Value(COLUMNNAME_DocAction);
+	}
+
+	/** Set Processed. */
+	public void setProcessed (boolean Processed)
+	{
+		set_Value (COLUMNNAME_Processed, Boolean.valueOf(Processed));
+	}
+
+	/** Get Processed. */
+	public boolean isProcessed () 
+	{
+		Object oo = get_Value(COLUMNNAME_Processed);
+		if (oo != null) 
+		{
+			 if (oo instanceof Boolean) 
+				 return ((Boolean)oo).booleanValue(); 
+			return "Y".equals(oo);
+		}
+		return false;
+	}
+
+	/** Set Processed On. */
+	public void setProcessedOn (BigDecimal ProcessedOn)
+	{
+		set_Value (COLUMNNAME_ProcessedOn, ProcessedOn);
+	}
+
+	/** Get Processed On. */
+	public BigDecimal getProcessedOn () 
+	{
+		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_ProcessedOn);
+		if (bd == null)
+			 return Env.ZERO;
+		return bd;
+	}
+
+	/** Set Posted. */
+	public void setPosted (boolean Posted)
+	{
+		set_Value (COLUMNNAME_Posted, Boolean.valueOf(Posted));
+	}
+
+	/** Get Posted. */
+	public boolean isPosted () 
+	{
+		Object oo = get_Value(COLUMNNAME_Posted);
+		if (oo != null) 
+		{
+			 if (oo instanceof Boolean) 
+				 return ((Boolean)oo).booleanValue(); 
+			return "Y".equals(oo);
+		}
+		return false;
+	}
+
+	/** Set Approved. */
+	public void setIsApproved (boolean IsApproved)
+	{
+		set_Value (COLUMNNAME_IsApproved, Boolean.valueOf(IsApproved));
+	}
+
+	/** Get Approved. */
+	public boolean isApproved () 
+	{
+		Object oo = get_Value(COLUMNNAME_IsApproved);
+		if (oo != null) 
+		{
+			 if (oo instanceof Boolean) 
+				 return ((Boolean)oo).booleanValue(); 
+			return "Y".equals(oo);
+		}
+		return false;
+	}
+
+	/** Set Reversal ID. */
+	public void setReversal_ID (int Reversal_ID)
+	{
+		if (Reversal_ID < 1) 
+			set_Value (COLUMNNAME_Reversal_ID, null);
+		else 
+			set_Value (COLUMNNAME_Reversal_ID, Integer.valueOf(Reversal_ID));
+	}
+
+	/** Get Reversal ID. */
+	public int getReversal_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_Reversal_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
+	/** Set Currency. */
+	public void setC_Currency_ID (int C_Currency_ID)
+	{
+		if (C_Currency_ID < 1) 
+			set_Value (COLUMNNAME_C_Currency_ID, null);
+		else 
+			set_Value (COLUMNNAME_C_Currency_ID, Integer.valueOf(C_Currency_ID));
+	}
+
+	/** Get Currency. */
+	public int getC_Currency_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_C_Currency_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
+	/** Set Currency Type. */
+	public void setC_ConversionType_ID (int C_ConversionType_ID)
+	{
+		if (C_ConversionType_ID < 1) 
+			set_Value (COLUMNNAME_C_ConversionType_ID, null);
+		else 
+			set_Value (COLUMNNAME_C_ConversionType_ID, Integer.valueOf(C_ConversionType_ID));
+	}
+
+	/** Get Currency Type. */
+	public int getC_ConversionType_ID () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_C_ConversionType_ID);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
+
+	/** Set Amount. */
+	public void setAmt (BigDecimal Amt)
+	{
+		set_Value (COLUMNNAME_Amt, Amt);
+	}
+
+	/** Get Amount. */
+	public BigDecimal getAmt () 
+	{
+		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_Amt);
+		if (bd == null)
+			 return Env.ZERO;
+		return bd;
 	}
 }

@@ -1240,4 +1240,13 @@ public interface I_C_AcctSchema_Default
 	public int getWriteOff_Acct();
 
 	public I_C_ValidCombination getWriteOff_A() throws RuntimeException;
+
+    /** Column name P_LandedCostClearing_Acct */
+    public static final String COLUMNNAME_P_LandedCostClearing_Acct = "P_LandedCostClearing_Acct";
+
+	/** Set Landed Cost Clearing. */
+	public void setP_LandedCostClearing_Acct (int P_LandedCostClearing_Acct);
+
+	/** Get Landed Cost Clearing. */
+	public int getP_LandedCostClearing_Acct();
 }

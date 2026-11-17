@@ -770,8 +770,7 @@ public class MInvoice extends X_C_Invoice implements DocAction , DocumentReversa
 
 					// MZ Goodwill
 					// copy the landed cost
-					invoiceLineTo.copyLandedCostFrom(invoiceLineFrom);
-					invoiceLineTo.allocateLandedCosts();
+					invoiceLineTo.copyLandedCostFrom(invoiceLineFrom, invoiceFrom.isReversal());
 					// end MZ
 					// Set cross revert refernces
 					if (invoiceFrom.isReversal()) {
@@ -1499,15 +1498,11 @@ public class MInvoice extends X_C_Invoice implements DocAction , DocumentReversa
 		//	Landed Costs
 		if (!isSOTrx())
 		{
-			for (int i = 0; i < lines.length; i++)
+			String error = MInvoiceLandedCost.validate(this);
+			if (error != null && error.length() > 0)
 			{
-				MInvoiceLine line = lines[i];
-				String error = line.allocateLandedCosts();
-				if (error != null && error.length() > 0)
-				{
-					processMsg = error;
-					return DocAction.STATUS_Invalid;
-				}
+				processMsg = error;
+				return DocAction.STATUS_Invalid;
 			}
 		}
 
@@ -2444,9 +2439,8 @@ public class MInvoice extends X_C_Invoice implements DocAction , DocumentReversa
 				info.append(" - @CounterDoc@: @C_Invoice_ID@=").append(counter.getDocumentNo());
 		}
 
-		for (MInvoiceLine invoiceLine:getLines()){
-		    generateCostDetail(invoiceLine);
-        }
+		if (!isSOTrx())
+			generateLandedCosts();
 
 		//	Refresh project line summarization for linked project lines (#2843)
 		//	The invoice is still not DocStatus CO/CL in the DB at this point, so its own lines
@@ -2824,6 +2818,8 @@ public class MInvoice extends X_C_Invoice implements DocAction , DocumentReversa
 		//	Reverse/Delete Matching
 		if (!isSOTrx()) {
 			if (!reverseMatching(reversalDate))
+				return null;
+			if (!voidLandedCosts())
 				return null;
 		}
 
@@ -3316,11 +3312,26 @@ public class MInvoice extends X_C_Invoice implements DocAction , DocumentReversa
 	}
 
 
-    private void generateCostDetail(MInvoiceLine invoiceLine) {
-        for (MLandedCostAllocation allocation : MLandedCostAllocation.getOfInvoiceLine(getCtx(), invoiceLine.getC_InvoiceLine_ID(), get_TrxName())) {
-            CostEngineFactory.getCostEngine(getAD_Client_ID()).createCostDetailForLandedCostAllocation(allocation);
-        }
-    }
+	private void generateLandedCosts() {
+		MInvoiceLandedCost.generateForInvoice(this);
+	}
+
+	private boolean voidLandedCosts() {
+		for (MLandedCost landedCost : MLandedCost.getOfInvoice(getCtx(), getC_Invoice_ID(), get_TrxName())) {
+			if (landedCost.isReversal() || landedCost.getReversal_ID() > 0)
+				continue;
+			if (!MLandedCost.DOCSTATUS_Completed.equals(landedCost.getDocStatus())
+					&& !MLandedCost.DOCSTATUS_Closed.equals(landedCost.getDocStatus()))
+				continue;
+			landedCost.setDocAction(MLandedCost.DOCACTION_Void);
+			if (!landedCost.processIt(MLandedCost.DOCACTION_Void)) {
+				processMsg = landedCost.getProcessMsg();
+				return false;
+			}
+			landedCost.saveEx();
+		}
+		return true;
+	}
 
 	public static List<MInvoice> getOfOrder(Properties ctx, int c_order_id, String trxName) {
 		String where =  COLUMNNAME_C_Order_ID+"=?"

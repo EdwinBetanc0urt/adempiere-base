@@ -242,4 +242,157 @@ public interface I_C_LandedCost
 	  * Immutable Universally Unique Identifier
 	  */
 	public String getUUID();
+
+    /** Column name C_Invoice_ID */
+    public static final String COLUMNNAME_C_Invoice_ID = "C_Invoice_ID";
+
+	/** Set Invoice. */
+	public void setC_Invoice_ID (int C_Invoice_ID);
+
+	/** Get Invoice. */
+	public int getC_Invoice_ID();
+
+    /** Column name C_Order_ID */
+    public static final String COLUMNNAME_C_Order_ID = "C_Order_ID";
+
+	/** Set Order. */
+	public void setC_Order_ID (int C_Order_ID);
+
+	/** Get Order. */
+	public int getC_Order_ID();
+
+    /** Column name C_InvoiceLandedCost_ID */
+    public static final String COLUMNNAME_C_InvoiceLandedCost_ID = "C_InvoiceLandedCost_ID";
+
+	/** Set Invoice Landed Cost. */
+	public void setC_InvoiceLandedCost_ID (int C_InvoiceLandedCost_ID);
+
+	/** Get Invoice Landed Cost. */
+	public int getC_InvoiceLandedCost_ID();
+
+    /** Column name C_DocType_ID */
+    public static final String COLUMNNAME_C_DocType_ID = "C_DocType_ID";
+
+	/** Set Document Type. */
+	public void setC_DocType_ID (int C_DocType_ID);
+
+	/** Get Document Type. */
+	public int getC_DocType_ID();
+
+    /** Column name DocumentNo */
+    public static final String COLUMNNAME_DocumentNo = "DocumentNo";
+
+	/** Set Document No. */
+	public void setDocumentNo (String DocumentNo);
+
+	/** Get Document No. */
+	public String getDocumentNo();
+
+    /** Column name DateDoc */
+    public static final String COLUMNNAME_DateDoc = "DateDoc";
+
+	/** Set Document Date. */
+	public void setDateDoc (Timestamp DateDoc);
+
+	/** Get Document Date. */
+	public Timestamp getDateDoc();
+
+    /** Column name DateAcct */
+    public static final String COLUMNNAME_DateAcct = "DateAcct";
+
+	/** Set Account Date. */
+	public void setDateAcct (Timestamp DateAcct);
+
+	/** Get Account Date. */
+	public Timestamp getDateAcct();
+
+    /** Column name DocStatus */
+    public static final String COLUMNNAME_DocStatus = "DocStatus";
+
+	/** Set Document Status. */
+	public void setDocStatus (String DocStatus);
+
+	/** Get Document Status. */
+	public String getDocStatus();
+
+    /** Column name DocAction */
+    public static final String COLUMNNAME_DocAction = "DocAction";
+
+	/** Set Document Action. */
+	public void setDocAction (String DocAction);
+
+	/** Get Document Action. */
+	public String getDocAction();
+
+    /** Column name Processed */
+    public static final String COLUMNNAME_Processed = "Processed";
+
+	/** Set Processed. */
+	public void setProcessed (boolean Processed);
+
+	/** Get Processed. */
+	public boolean isProcessed();
+
+    /** Column name ProcessedOn */
+    public static final String COLUMNNAME_ProcessedOn = "ProcessedOn";
+
+	/** Set Processed On. */
+	public void setProcessedOn (BigDecimal ProcessedOn);
+
+	/** Get Processed On. */
+	public BigDecimal getProcessedOn();
+
+    /** Column name Posted */
+    public static final String COLUMNNAME_Posted = "Posted";
+
+	/** Set Posted. */
+	public void setPosted (boolean Posted);
+
+	/** Get Posted. */
+	public boolean isPosted();
+
+    /** Column name IsApproved */
+    public static final String COLUMNNAME_IsApproved = "IsApproved";
+
+	/** Set Approved. */
+	public void setIsApproved (boolean IsApproved);
+
+	/** Get Approved. */
+	public boolean isApproved();
+
+    /** Column name Reversal_ID */
+    public static final String COLUMNNAME_Reversal_ID = "Reversal_ID";
+
+	/** Set Reversal ID. */
+	public void setReversal_ID (int Reversal_ID);
+
+	/** Get Reversal ID. */
+	public int getReversal_ID();
+
+    /** Column name C_Currency_ID */
+    public static final String COLUMNNAME_C_Currency_ID = "C_Currency_ID";
+
+	/** Set Currency. */
+	public void setC_Currency_ID (int C_Currency_ID);
+
+	/** Get Currency. */
+	public int getC_Currency_ID();
+
+    /** Column name C_ConversionType_ID */
+    public static final String COLUMNNAME_C_ConversionType_ID = "C_ConversionType_ID";
+
+	/** Set Currency Type. */
+	public void setC_ConversionType_ID (int C_ConversionType_ID);
+
+	/** Get Currency Type. */
+	public int getC_ConversionType_ID();
+
+    /** Column name Amt */
+    public static final String COLUMNNAME_Amt = "Amt";
+
+	/** Set Amount. */
+	public void setAmt (BigDecimal Amt);
+
+	/** Get Amount. */
+	public BigDecimal getAmt();
 }

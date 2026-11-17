@@ -1013,350 +1013,43 @@ public class MInvoiceLine extends X_C_InvoiceLine implements DocumentReversalLin
     	return inOutLineId;
     }
 
-	private String getErrorMessage(String landedCostDistribution) {
-		if(landedCostDistribution.equals(MLandedCost.LANDEDCOSTDISTRIBUTION_Costs)) {
-			return Msg.getMsg(getCtx(), "LandedCostNoInvoiceError");
-		} else if(landedCostDistribution.equals(MLandedCost.LANDEDCOSTDISTRIBUTION_Quantity)) {
-			return Msg.getMsg(getCtx(), "LandedCostZeroQtyError");
-		} else if(landedCostDistribution.equals(MLandedCost.LANDEDCOSTDISTRIBUTION_Weight)) {
-			return Msg.getMsg(getCtx(), "LandedCostNoWeightError");
-		} else if(landedCostDistribution.equals(MLandedCost.LANDEDCOSTDISTRIBUTION_Volume)) {
-			return Msg.getMsg(getCtx(), "LandedCostNoVolumeError");
-		}
-		return "";
-	}
-
-	private String landedCostDateIssue(MInOutLine iol)
-	{
-		Timestamp invoiceDate = getParent().getDateAcct();
-		Timestamp receiptDate = iol.getParent().getMovementDate();
-		if (invoiceDate != null && receiptDate != null && invoiceDate.before(receiptDate))
-			return Msg.getMsg(getCtx(), "LandedCostDateError",
-				new Object[]{invoiceDate, iol.getParent().getDocumentNo(), receiptDate});
-		return null;
-	}
-
-	private String landedCostBaseIssue(MInOutLine iol, String distribution, BigDecimal base)
-	{
-		if (base.signum() != 0 || iol.getMovementQty().signum() == 0)
-			return null;
-		String key;
-		if (MLandedCost.LANDEDCOSTDISTRIBUTION_Volume.equals(distribution))
-			key = "LandedCostNoVolumeError";
-		else if (MLandedCost.LANDEDCOSTDISTRIBUTION_Weight.equals(distribution))
-			key = "LandedCostNoWeightError";
-		else if (MLandedCost.LANDEDCOSTDISTRIBUTION_Costs.equals(distribution))
-			key = "LandedCostNoInvoiceError";
-		else
-			return null;
-		MProduct product = iol.getProduct();
-		String productLabel = (product != null ? product.getValue() + " - " + product.getName()
-								: String.valueOf(iol.getM_Product_ID()))
-			+ " (" + iol.getParent().getDocumentNo() + " / " + iol.getLine() + ")";
-		return Msg.getMsg(getCtx(), key, new Object[]{productLabel});
-	}
-
-	/**************************************************************************
-	 * 	Allocate Landed Costs
-	 *	@return error message or ""
-	 */
-	public String allocateLandedCosts()
-	{
-		//if (isProcessed())
-		//	return "Processed";
-		if (getParent().isProcessed())
-			MPeriod.testPeriodOpen(getCtx(), getParent().getDateAcct(), getParent().getC_DocTypeTarget_ID(), getAD_Org_ID());
-		if (getParent().isProcessed()) {
-			MFactAcct.deleteEx(MInvoice.Table_ID, getParent().get_ID(), get_TrxName());
-			//
-			// Update Invoice
-			getParent().setPosted(false);
-			getParent().saveEx();
-		}
-
-		String sql = "DELETE M_CostDetail WHERE EXISTS(SELECT 1 FROM C_LandedCostAllocation lca " +
-				"WHERE lca.C_LandedCostAllocation_ID = M_CostDetail.C_LandedCostAllocation_ID " +
-				"AND lca.C_InvoiceLine_ID = ?)";
-		int no = DB.executeUpdateEx(sql, new Object[]{getC_InvoiceLine_ID()}, get_TrxName());
-		if (no != 0)
-			log.info("Deleted #" + no);
-		sql = "DELETE C_LandedCostAllocation WHERE C_InvoiceLine_ID=" + getC_InvoiceLine_ID();
-		 no = DB.executeUpdateEx(sql, get_TrxName());
-		if (no != 0)
-			log.info("Deleted #" + no);
-
-		MLandedCost[] lcs = MLandedCost.getLandedCosts(this);
-		if (lcs.length == 0)
-			return "";
-		
-		int inserted = 0;
-		//	*** Single Criteria ***
-		if (lcs.length == 1)
-		{
-			MLandedCost lc = lcs[0];
-			if (lc.getM_InOut_ID() != 0 && lc.getM_InOutLine_ID() == 0)
-			{
-				//	Create List
-				ArrayList<MInOutLine> list = new ArrayList<MInOutLine>();
-				MInOut ship = new MInOut (getCtx(), lc.getM_InOut_ID(), get_TrxName());
-				MInOutLine[] lines = ship.getLines();
-				for (int i = 0; i < lines.length; i++)
-				{
-					if (lines[i].isDescription() || lines[i].getM_Product_ID() == 0)
-						continue;
-					if (lc.getM_Product_ID() == 0
-						|| lc.getM_Product_ID() == lines[i].getM_Product_ID())
-						list.add(lines[i]);
-				}
-				if (list.isEmpty())
-					return Msg.getMsg(getCtx(), "LandedCostNoMatchError");
-				//	Calculate total & base
-				LinkedHashSet<String> issues = new LinkedHashSet<String>();
-				BigDecimal total = Env.ZERO;
-				for (int i = 0; i < list.size(); i++)
-				{
-					MInOutLine iol = (MInOutLine)list.get(i);
-					String dateIssue = landedCostDateIssue(iol);
-					if (dateIssue != null)
-						issues.add(dateIssue);
-					BigDecimal base = iol.getBase(lc.getLandedCostDistribution());
-					String baseIssue = landedCostBaseIssue(iol, lc.getLandedCostDistribution(), base);
-					if (baseIssue != null)
-						issues.add(baseIssue);
-					total = total.add(base);
-				}
-				if (!issues.isEmpty())
-					return Msg.getMsg(getCtx(), "LandedCostDistributionError",
-						new Object[]{String.join("\n", issues)});
-				if (total.signum() == 0) {
-					return getErrorMessage(lc.getLandedCostDistribution());
-				}
-				//	Create Allocations
-				for (int i = 0; i < list.size(); i++)
-				{
-					MInOutLine iol = (MInOutLine)list.get(i);
-					MLandedCostAllocation lca = new MLandedCostAllocation (this, lc.getM_CostElement_ID());
-					lca.setM_Product_ID(iol.getM_Product_ID());
-					lca.setM_AttributeSetInstance_ID(iol.getM_AttributeSetInstance_ID());
-					lca.setM_InOutLine_ID(iol.getM_InOutLine_ID());
-					lca.setC_LandedCostType_ID(lc.getC_LandedCostType_ID());
-					BigDecimal base = iol.getBase(lc.getLandedCostDistribution());
-					lca.setBase(base);
-					// MZ Goodwill
-					// add set Qty from InOutLine
-					lca.setQty(iol.getMovementQty());
-					// end MZ
-					if (base.signum() != 0) {
-						BigDecimal result = getLineNetAmt()
-								.multiply(base)
-								.divide(total, MathContext.DECIMAL128);
-						lca.setAmt(result, getPrecision());
-					}
-					lca.saveEx();
-					inserted++;
-				}
-				log.info("Inserted " + inserted);
-				allocateLandedCostRounding();
-				return "";
-			}
-			//	Single Line
-			else if (lc.getM_InOutLine_ID() != 0)
-			{
-				MInOutLine iol = new MInOutLine (getCtx(), lc.getM_InOutLine_ID(), get_TrxName());
-				if (iol.isDescription() || iol.getM_Product_ID() == 0)
-					return Msg.getMsg(getCtx(), "LandedCostInvalidLineErr");
-				MLandedCostAllocation lca = new MLandedCostAllocation (this, lc.getM_CostElement_ID());
-				lca.setM_Product_ID(iol.getM_Product_ID());
-				lca.setM_InOutLine_ID(lc.getM_InOutLine_ID());
-				lca.setM_AttributeSetInstance_ID(iol.getM_AttributeSetInstance_ID());
-				lca.setC_LandedCostType_ID(lc.getC_LandedCostType_ID());
-				LinkedHashSet<String> issues = new LinkedHashSet<String>();
-				String dateIssue = landedCostDateIssue(iol);
-				if (dateIssue != null)
-					issues.add(dateIssue);
-				BigDecimal base = iol.getBase(lc.getLandedCostDistribution());
-				String baseIssue = landedCostBaseIssue(iol, lc.getLandedCostDistribution(), base);
-				if (baseIssue != null)
-					issues.add(baseIssue);
-				if (!issues.isEmpty())
-					return Msg.getMsg(getCtx(), "LandedCostDistributionError",
-						new Object[]{String.join("\n", issues)});
-				lca.setBase(base);
-				lca.setAmt(getLineNetAmt());
-				// MZ Goodwill
-				// add set Qty from InOutLine
-				lca.setQty(iol.getMovementQty());
-				// end MZ
-				lca.saveEx();
-				return "";
-			}
-			//	Single Product
-			else if (lc.getM_Product_ID() != 0)
-			{
-				return Msg.getMsg(getCtx(), "LandedCostProductDirectErr");
-			}
-			else
-				return Msg.getMsg(getCtx(), "LandedCostNoRefErr");
-		}
-
-		//	*** Multiple Criteria ***
-		String LandedCostDistribution = lcs[0].getLandedCostDistribution();
-		int M_CostElement_ID = lcs[0].getM_CostElement_ID();
-		for (int i = 0; i < lcs.length; i++)
-		{
-			MLandedCost lc = lcs[i];
-			if (!LandedCostDistribution.equals(lc.getLandedCostDistribution()))
-				return Msg.getMsg(getCtx(), "LandedCostInconsistentDist");
-			if (lc.getM_Product_ID() != 0 && lc.getM_InOut_ID() == 0 && lc.getM_InOutLine_ID() == 0)
-				return Msg.getMsg(getCtx(), "LandedCostProductDirectErr");
-			if (M_CostElement_ID != lc.getM_CostElement_ID())
-				return Msg.getMsg(getCtx(), "LandedCostDiffElementErr");
-		}
-		//	Create List
-		ArrayList<MInOutLine> list = new ArrayList<MInOutLine>();
-		for (int ii = 0; ii < lcs.length; ii++)
-		{
-			MLandedCost lc = lcs[ii];
-			if (lc.getM_InOut_ID() != 0 && lc.getM_InOutLine_ID() == 0)		//	entire receipt
-			{
-				MInOut ship = new MInOut (getCtx(), lc.getM_InOut_ID(), get_TrxName());
-				MInOutLine[] lines = ship.getLines();
-				for (int i = 0; i < lines.length; i++)
-				{
-					if (lines[i].isDescription()		//	decription or no product
-						|| lines[i].getM_Product_ID() == 0)
-						continue;
-					if (lc.getM_Product_ID() == 0		//	no restriction or product match
-						|| lc.getM_Product_ID() == lines[i].getM_Product_ID())
-						list.add(lines[i]);
-				}
-			}
-			else if (lc.getM_InOutLine_ID() != 0)	//	receipt line
-			{
-				MInOutLine iol = new MInOutLine (getCtx(), lc.getM_InOutLine_ID(), get_TrxName());
-				if (!iol.isDescription() && iol.getM_Product_ID() != 0)
-					list.add(iol);
-			}
-		}
-		if (list.isEmpty())
-			return Msg.getMsg(getCtx(), "LandedCostNoMatchError");
-		//	Calculate total & base
-		LinkedHashSet<String> issues = new LinkedHashSet<String>();
-		BigDecimal total = Env.ZERO;
-		for (int i = 0; i < list.size(); i++)
-		{
-			MInOutLine iol = (MInOutLine)list.get(i);
-			String dateIssue = landedCostDateIssue(iol);
-			if (dateIssue != null)
-				issues.add(dateIssue);
-			BigDecimal base = iol.getBase(LandedCostDistribution);
-			String baseIssue = landedCostBaseIssue(iol, LandedCostDistribution, base);
-			if (baseIssue != null)
-				issues.add(baseIssue);
-			total = total.add(base);
-		}
-		if (!issues.isEmpty())
-			return Msg.getMsg(getCtx(), "LandedCostDistributionError",
-				new Object[]{String.join("\n", issues)});
-		if (total.signum() == 0)
-			return getErrorMessage(LandedCostDistribution);
-		//	Create Allocations
-		for (int i = 0; i < list.size(); i++)
-		{
-			MInOutLine iol = (MInOutLine)list.get(i);
-			MLandedCostAllocation lca = new MLandedCostAllocation (this, lcs[0].getM_CostElement_ID());
-			lca.setM_Product_ID(iol.getM_Product_ID());
-			lca.setM_AttributeSetInstance_ID(iol.getM_AttributeSetInstance_ID());
-			lca.setC_LandedCostType_ID(lcs[0].getC_LandedCostType_ID());
-			lca.setM_InOutLine_ID(iol.getM_InOutLine_ID());
-			BigDecimal base = iol.getBase(LandedCostDistribution);
-			lca.setBase(base);
-			// MZ Goodwill
-			// add set Qty from InOutLine
-			lca.setQty(iol.getMovementQty());
-			// end MZ
-			if (base.signum() != 0) {
-				BigDecimal result = getLineNetAmt()
-						.multiply(base)
-						.divide(total, MathContext.DECIMAL128);
-				lca.setAmt(result, getPrecision());
-			}
-			lca.saveEx();
-			inserted++;
-		}
-
-		log.info("Inserted " + inserted);
-		allocateLandedCostRounding();
-		return "";
-	}	//	allocate Costs
-
 	/**
-	 * 	Allocate Landed Cost - Enforce Rounding
+	 * 	Get landed cost drafts of InvoiceLine
+	 * 	@param whereClause unused
+	 * 	@return drafts
 	 */
-	private void allocateLandedCostRounding()
+	public List<MInvoiceLandedCost> getLandedCost (String whereClause)
 	{
-		MLandedCostAllocation[] allocations = MLandedCostAllocation.getOfInvoiceLine(
-			getCtx(), getC_InvoiceLine_ID(), get_TrxName());
-		MLandedCostAllocation largestAmtAllocation = null;
-		BigDecimal allocationAmt = Env.ZERO;
-		for (int i = 0; i < allocations.length; i++)
-		{
-			MLandedCostAllocation allocation = allocations[i];
-			if (largestAmtAllocation == null
-				|| allocation.getAmt(true).compareTo(largestAmtAllocation.getAmt(true)) > 0)
-				largestAmtAllocation = allocation;
-			allocationAmt = allocationAmt.add(allocation.getAmt(true));
-		}
-		BigDecimal difference = getLineNetAmt().subtract(allocationAmt);
-		if (difference.signum() != 0 && largestAmtAllocation != null)
-		{
-			largestAmtAllocation.setAmt(largestAmtAllocation.getAmt(true).add(difference));
-			largestAmtAllocation.saveEx();
-			log.config("Difference=" + difference
-				+ ", C_LandedCostAllocation_ID=" + largestAmtAllocation.getC_LandedCostAllocation_ID()
-				+ ", Amt" + largestAmtAllocation.getAmt());
-		}
-	}	//	allocateLandedCostRounding
-
-	// MZ Goodwill
-	/**
-	 * 	Get LandedCost of InvoiceLine
-	 * 	@param whereClause starting with AND
-	 * 	@return landedCost
-	 */
-	public List<MLandedCost> getLandedCost (String whereClause)
-	{
-		return new Query(getCtx(), MLandedCost.Table_Name, "C_InvoiceLine_ID = ?", get_TrxName())
-				.setParameters(getC_InvoiceLine_ID())
-				.setOnlyActiveRecords(true)
-				.list();
+		return MInvoiceLandedCost.getOfInvoiceLine(getCtx(), getC_InvoiceLine_ID(), get_TrxName());
 	}	//	getLandedCost
 
 	/**
-	 * 	Copy LandedCost From other InvoiceLine.
+	 * 	Copy landed cost drafts from other InvoiceLine.
 	 *	@param otherInvoiceLine invoiceline
-	 *	@return number of lines copied
+	 *	@param generated mark copies as generated (reversals)
+	 *	@return number of drafts copied
 	 */
-	public int copyLandedCostFrom (MInvoiceLine otherInvoiceLine)
+	public int copyLandedCostFrom (MInvoiceLine otherInvoiceLine, boolean generated)
 	{
 		if (otherInvoiceLine == null)
 			return 0;
-		List<MLandedCost> fromLandedCosts = otherInvoiceLine.getLandedCost(null);
+		List<MInvoiceLandedCost> fromDrafts = otherInvoiceLine.getLandedCost(null);
 		AtomicInteger count = new AtomicInteger();
-		fromLandedCosts.forEach(fromLandedCost -> {
-			MLandedCost landedCost = new MLandedCost (getCtx(), 0, get_TrxName());
-			PO.copyValues (fromLandedCost, landedCost, fromLandedCost.getAD_Client_ID(), fromLandedCost.getAD_Org_ID());
-			landedCost.setC_InvoiceLine_ID(getC_InvoiceLine_ID());
-			landedCost.set_ValueNoCheck ("C_LandedCost_ID", I_ZERO);	// new
-			if (landedCost.save(get_TrxName())) {
+		fromDrafts.forEach(fromDraft -> {
+			MInvoiceLandedCost draft = new MInvoiceLandedCost (getCtx(), 0, get_TrxName());
+			PO.copyValues (fromDraft, draft, fromDraft.getAD_Client_ID(), fromDraft.getAD_Org_ID());
+			draft.setC_Invoice_ID(getC_Invoice_ID());
+			draft.setC_InvoiceLine_ID(getC_InvoiceLine_ID());
+			draft.setIsGenerated(generated);
+			draft.set_ValueNoCheck ("C_InvoiceLandedCost_ID", I_ZERO);	// new
+			if (draft.save(get_TrxName())) {
 				count.incrementAndGet();
 			}
 		});
-		if (fromLandedCosts.size() != count.get())
-			log.log(Level.SEVERE, "LandedCost difference - From=" + fromLandedCosts.size() + " <> Saved=" + count);
+		if (fromDrafts.size() != count.get())
+			log.log(Level.SEVERE, "LandedCost difference - From=" + fromDrafts.size() + " <> Saved=" + count);
 		return count.get();
-	}	//	copyLinesFrom
-	// end MZ
+	}	//	copyLandedCostFrom
 
 	/**
 	 * @param rmaline

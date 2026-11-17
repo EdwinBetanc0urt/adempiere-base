@@ -744,4 +744,22 @@ public class X_M_Product_Acct extends PO implements I_M_Product_Acct, I_Persiste
 	{
 		return (String)get_Value(COLUMNNAME_UUID);
 	}
+
+	/** Set Landed Cost Clearing. */
+	public void setP_LandedCostClearing_Acct (int P_LandedCostClearing_Acct)
+	{
+		if (P_LandedCostClearing_Acct < 1) 
+			set_Value (COLUMNNAME_P_LandedCostClearing_Acct, null);
+		else 
+			set_Value (COLUMNNAME_P_LandedCostClearing_Acct, Integer.valueOf(P_LandedCostClearing_Acct));
+	}
+
+	/** Get Landed Cost Clearing. */
+	public int getP_LandedCostClearing_Acct () 
+	{
+		Integer ii = (Integer)get_Value(COLUMNNAME_P_LandedCostClearing_Acct);
+		if (ii == null)
+			 return 0;
+		return ii.intValue();
+	}
 }

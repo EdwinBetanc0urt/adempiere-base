@@ -259,4 +259,13 @@ public interface I_C_LandedCostAllocation
 	  * Immutable Universally Unique Identifier
 	  */
 	public String getUUID();
+
+    /** Column name C_LandedCost_ID */
+    public static final String COLUMNNAME_C_LandedCost_ID = "C_LandedCost_ID";
+
+	/** Set Landed Cost. */
+	public void setC_LandedCost_ID (int C_LandedCost_ID);
+
+	/** Get Landed Cost. */
+	public int getC_LandedCost_ID();
 }
