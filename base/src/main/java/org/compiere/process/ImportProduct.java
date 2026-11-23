@@ -31,6 +31,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.Comparator;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -164,7 +165,9 @@ public class ImportProduct extends SvrProcess implements ImportProcess
 			+ "SET M_Product_ID=(SELECT M_Product_ID FROM M_Product_po p"
 			+ " WHERE i.C_BPartner_ID=p.C_BPartner_ID"
 			+ " AND p.IsCurrentVendor='Y' AND p.IsActive='Y'"
-			+ " AND i.VendorProductNo=p.VendorProductNo AND p.AD_Client_ID=").append(m_AD_Client_ID).append(") "
+			+ " AND i.VendorProductNo=p.VendorProductNo AND p.AD_Client_ID=").append(m_AD_Client_ID)
+			.append(" AND p.AD_Org_ID IN (0, i.AD_Org_ID)"
+			+ " ORDER BY p.AD_Org_ID DESC LIMIT 1) "
 			+ "WHERE M_Product_ID IS NULL"
 			+ " AND I_IsImported='N'").append(clientCheck);
 		no = DB.executeUpdate(sql.toString(), get_TrxName());
@@ -349,7 +352,9 @@ public class ImportProduct extends SvrProcess implements ImportProcess
 				+ "SET ").append(strFieldsPO[i]).append(" = (SELECT ").append(strFieldsPO[i])
 				.append(" FROM M_Product_PO p"
 				+ " WHERE i.M_Product_ID=p.M_Product_ID AND i.C_BPartner_ID=p.C_BPartner_ID"
-				+ " AND p.IsCurrentVendor='Y' AND p.IsActive='Y' AND p.AD_Client_ID=").append(m_AD_Client_ID).append(")"
+				+ " AND p.IsCurrentVendor='Y' AND p.IsActive='Y' AND p.AD_Client_ID=").append(m_AD_Client_ID)
+				.append(" AND p.AD_Org_ID IN (0, i.AD_Org_ID)"
+				+ " ORDER BY p.AD_Org_ID DESC LIMIT 1)"
 				+ " WHERE M_Product_ID IS NOT NULL AND C_BPartner_ID IS NOT NULL"
 				+ " AND ").append(strFieldsPO[i]).append(" IS NULL"
 				+ " AND I_IsImported='N'").append(clientCheck);
@@ -366,7 +371,9 @@ public class ImportProduct extends SvrProcess implements ImportProcess
 				+ "SET ").append(numFieldsPO[i]).append(" = (SELECT ").append(numFieldsPO[i])
 				.append(" FROM M_Product_PO p"
 				+ " WHERE i.M_Product_ID=p.M_Product_ID AND i.C_BPartner_ID=p.C_BPartner_ID"
-				+ " AND p.IsCurrentVendor='Y' AND p.IsActive='Y' AND i.AD_Client_ID=p.AD_Client_ID)"
+				+ " AND p.IsCurrentVendor='Y' AND p.IsActive='Y' AND i.AD_Client_ID=p.AD_Client_ID"
+				+ " AND p.AD_Org_ID IN (0, i.AD_Org_ID)"
+				+ " ORDER BY p.AD_Org_ID DESC LIMIT 1)"
 				+ " WHERE M_Product_ID IS NOT NULL AND C_BPartner_ID IS NOT NULL"
 				+ " AND (").append(numFieldsPO[i]).append(" IS NULL OR ").append(numFieldsPO[i]).append("=0)"
 				+ " AND I_IsImported='N'").append(clientCheck);
@@ -706,8 +713,13 @@ public class ImportProduct extends SvrProcess implements ImportProcess
 							C_BPartner_ID, M_Product_ID, imp.getAD_Org_ID(), false, get_TrxName());
 						if (!existingPOs.isEmpty())
 						{
-							//	Update only the first one found
-							MProductPO productPO = existingPOs.get(0);
+							//	Update only the best match: import Org first, then current vendor, then active
+							final int importOrgId = imp.getAD_Org_ID();
+							MProductPO productPO = existingPOs.stream()
+								.min(Comparator.<MProductPO>comparingInt(po -> po.getAD_Org_ID() == importOrgId ? 0 : 1)
+									.thenComparingInt(po -> po.isCurrentVendor() ? 0 : 1)
+									.thenComparingInt(po -> po.isActive() ? 0 : 1))
+								.orElse(existingPOs.get(0));
 							productPO.setIsCurrentVendor(true);
 							productPO.setC_UOM_ID(imp.getC_UOM_ID());
 							productPO.setC_Currency_ID(imp.getC_Currency_ID());
