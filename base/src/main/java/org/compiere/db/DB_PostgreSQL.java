@@ -412,8 +412,8 @@ public class DB_PostgreSQL implements AdempiereDatabase
 	 *
 	 *  @return Date: TO_CHAR(columnName,'DD/MM/YYYY') with the language date pattern,
 	 *      DateTime: date pattern plus HH24:MI:SS, Time: HH24:MI:SS,
-	 *      Amount: grouped with two decimals, Number/Quantity/CostPrice: without trailing zeros,
-	 *      otherwise CAST(columnName AS Text)
+	 *      Amount, CostPrice and Quantity: grouped with 2 to 12 decimals, Number: grouped with 1 to 12 decimals
+	 *      (as DisplayType.getNumberFormat), otherwise CAST(columnName AS Text)
 	 *  @see DisplayType
 	 *  @see org.compiere.util.Env
 	 *
@@ -427,23 +427,43 @@ public class DB_PostgreSQL implements AdempiereDatabase
 		if (!DisplayType.isNumeric(displayType) || displayType == DisplayType.Integer) {
 			return textValue;
 		}
-		final boolean isDecimalPoint = Language.getLanguage(AD_Language).isDecimalPoint();
-		String numberValue;
-		if (displayType == DisplayType.Amount) {
-			//	FM removes the padding spaces of TO_CHAR
-			numberValue = "TO_CHAR(" + columnName + ",'FM999,999,999,999,990.00')";
-			if (!isDecimalPoint) {
-				numberValue = "TRANSLATE(" + numberValue + ",',.','.,')";
-			}
-		} else {
-			//	Keep the full precision, only remove the trailing decimal zeros
-			numberValue = "REGEXP_REPLACE(" + textValue + ",'(\\.[0-9]*[1-9])0+$|\\.0+$','\\1')";
-			if (!isDecimalPoint) {
-				numberValue = "REPLACE(" + numberValue + ",'.',',')";
-			}
+		//	Same fraction digits as DisplayType.getNumberFormat: Amount, CostPrice and Quantity
+		//	at least 2, Number at least 1, up to 12 (FM drops the optional trailing zeros)
+		final int minimumFractionDigits = displayType == DisplayType.Number ? 1 : 2;
+		String numberValue = "TO_CHAR(" + columnName + ",'" + getNumberPattern(minimumFractionDigits) + "')";
+		if (!Language.getLanguage(AD_Language).isDecimalPoint()) {
+			//	swap group and decimal separators (e.g. 1.234,50)
+			numberValue = "TRANSLATE(" + numberValue + ",',.','.,')";
 		}
 		return numberValue;
 	}   //  TO_CHAR
+
+	/**	Integer digits of a formatted number, as DisplayType MAX_DIGITS	*/
+	private static final int NUMBER_MAX_INTEGER_DIGITS = 28;
+	/**	Fraction digits of a formatted number, as DisplayType MAX_FRACTION	*/
+	private static final int NUMBER_MAX_FRACTION_DIGITS = 12;
+
+	/**
+	 * Get PostgreSQL TO_CHAR pattern for a grouped number with explicit separators,
+	 * e.g. FM9,999,...,990.009999999999 for 2 minimum fraction digits
+	 * @param minimumFractionDigits fraction digits always shown
+	 * @return pattern
+	 */
+	private String getNumberPattern(int minimumFractionDigits) {
+		StringBuilder integerPattern = new StringBuilder();
+		for (int digit = 1; digit <= NUMBER_MAX_INTEGER_DIGITS; digit++) {
+			if (digit > 1 && (digit - 1) % 3 == 0) {
+				integerPattern.insert(0, ',');
+			}
+			//	last integer digit is always shown (0.50 instead of .50)
+			integerPattern.insert(0, digit == 1 ? '0' : '9');
+		}
+		StringBuilder fractionPattern = new StringBuilder();
+		for (int digit = 1; digit <= NUMBER_MAX_FRACTION_DIGITS; digit++) {
+			fractionPattern.append(digit <= minimumFractionDigits ? '0' : '9');
+		}
+		return "FM" + integerPattern + "." + fractionPattern;
+	}	//	getNumberPattern
 
 	/**
 	 * Get SQL for a formatted date, date time or time column
