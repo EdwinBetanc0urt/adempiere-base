@@ -390,7 +390,8 @@ public class MLookupFactory
 			+ "cd.ColumnName AS DisplayColumn,rt.IsValueDisplayed,cd.IsTranslated,"	//	3..5
 			+ "rt.WhereClause,rt.OrderByClause,t.AD_Window_ID,t.PO_Window_ID, "		//	6..9
 			+ "t.AD_Table_ID, cd.ColumnSQL as DisplayColumnSQL, "					//	10..11
-			+ "rt.AD_Window_ID as RT_AD_Window_ID, rt.IsAlert, rt.DisplaySQL, rt.IsDisplayIdentifier " // 12..15
+			+ "rt.AD_Window_ID as RT_AD_Window_ID, rt.IsAlert, rt.DisplaySQL, rt.IsDisplayIdentifier, " // 12..15
+			+ "cd.AD_Reference_ID AS DisplayReference_ID, cd.AD_Reference_Value_ID AS DisplayReferenceValue_ID " // 16..17
 			+ "FROM AD_Ref_Table rt"
 			+ " INNER JOIN AD_Table t ON (rt.AD_Table_ID=t.AD_Table_ID)"
 			+ " INNER JOIN AD_Column ck ON (rt.AD_Key=ck.AD_Column_ID)"
@@ -401,6 +402,7 @@ public class MLookupFactory
 		String	KeyColumn = null, DisplayColumn = null, TableName = null, WhereClause = null, OrderByClause = null;
 		String displayColumnSQL = null, displaySQL = null;
 		boolean IsTranslated = false, isValueDisplayed = false, isAlert = false, isDisplayIdentifier = false;
+		int displayReferenceId = 0, displayReferenceValueId = 0;
 		//boolean isSOTrx = !"N".equals(Env.getContext(ctx, WindowNo, "IsSOTrx"));
 		int ZoomWindow = 0;
 		int ZoomWindowPO = 0;
@@ -432,6 +434,8 @@ public class MLookupFactory
 				isAlert = "Y".equals(rs.getString(13));
 				displaySQL = rs.getString(14);
 				isDisplayIdentifier = "Y".equals(rs.getString(15));
+				displayReferenceId = rs.getInt(16);
+				displayReferenceValueId = rs.getInt(17);
 				loaded = true;
 			}
 		}
@@ -456,13 +460,32 @@ public class MLookupFactory
 			return getLookup_TableDir(ctx, language, WindowNo, KeyColumn);
 		}
 
+		//	Display column is the key itself (shows the ID): display the table identifiers,
+		//	keeping the where and order by clauses of the reference
+		String displayKeySQL = null;
+		if (Util.isEmpty(displaySQL, true) && isDisplayColumnKey(KeyColumn, DisplayColumn))
+		{
+			MLookupInfo tableDirInfo = getLookup_TableDir(ctx, language, WindowNo, KeyColumn);
+			final String tableDirOrderBy = " ORDER BY 3";
+			if (tableDirInfo != null && TableName.equalsIgnoreCase(tableDirInfo.TableName)
+				&& tableDirInfo.Query != null && tableDirInfo.Query.endsWith(tableDirOrderBy))
+			{
+				displayKeySQL = tableDirInfo.Query.substring(0, tableDirInfo.Query.length() - tableDirOrderBy.length());
+			}
+		}
+
 		StringBuffer realSQL = new StringBuffer("SELECT ");
 		if (KeyColumn != null && !KeyColumn.endsWith("_ID")) {
 			realSQL.append("NULL,");
 		}
 
+		if (displayKeySQL != null)
+		{
+			//	SELECT Key, NULL, Identifiers, IsActive FROM TableName
+			realSQL = new StringBuffer(displayKeySQL);
+		}
 		//	Translated
-		if (IsTranslated && !Env.isBaseLanguage(language, TableName))
+		else if (IsTranslated && !Env.isBaseLanguage(language, TableName))
 		{
 			realSQL.append(TableName).append(".").append(KeyColumn).append(",");
 			if (KeyColumn != null && KeyColumn.endsWith("_ID")) {
@@ -500,11 +523,16 @@ public class MLookupFactory
 			{
 				if (isValueDisplayed)
 					realSQL.append("NVL(").append(TableName).append(".Value,'-1') || '-' || ");
-				
-				if (displayColumnSQL != null && displayColumnSQL.trim().length() > 0)
-					realSQL.append("NVL(").append(displayColumnSQL).append(",'-1')");
+
+				final boolean isVirtualDisplay = displayColumnSQL != null && displayColumnSQL.trim().length() > 0;
+				final String displayColumnValue = isVirtualDisplay ? displayColumnSQL : TableName + "." + DisplayColumn;
+				//	as the display column is shown by its type (date, number, list, lookup)
+				final String displayByTypeSQL = getTableReferenceDisplaySQL(language, displayColumnValue,
+					TableName, DisplayColumn, displayReferenceId, displayReferenceValueId, TableName, 0);
+				if (displayByTypeSQL != null)
+					realSQL.append("NVL(").append(displayByTypeSQL).append(",'-1')");
 				else
-					realSQL.append("NVL(").append(TableName).append(".").append(DisplayColumn).append(",'-1')");
+					realSQL.append("NVL(").append(displayColumnValue).append(",'-1')");
 			}
 			realSQL.append(",").append(TableName).append(".IsActive");
 			realSQL.append(" FROM ").append(TableName);
@@ -568,9 +596,92 @@ public class MLookupFactory
 	static public String getLookup_TableEmbed (Language language,
 		String BaseColumn, String BaseTable, int AD_Reference_Value_ID)
 	{
+		return getLookup_TableEmbed(language, BaseColumn, BaseTable, AD_Reference_Value_ID, 0);
+	}	//	getLookup_TableEmbed
+
+	/**	Max nested table references resolved by type on a display column	*/
+	private static final int MAX_DISPLAY_REFERENCE_DEPTH = 3;
+
+	/**
+	 * Is the display column of a table reference its own key column (the reference shows the ID)
+	 * @param keyColumn reference key column
+	 * @param displayColumn reference display column
+	 * @return true if the display is the key and the key is an ID
+	 */
+	private static boolean isDisplayColumnKey(String keyColumn, String displayColumn) {
+		return keyColumn != null
+			&& keyColumn.endsWith("_ID")
+			&& keyColumn.equalsIgnoreCase(displayColumn);
+	}	//	isDisplayColumnKey
+
+	/**
+	 * Get the SQL of the display column of a table reference as it is shown by its display type,
+	 * instead of the raw column value:
+	 * date, time and non integer numbers formatted, list as its translated name and
+	 * a lookup (Table, Table Direct, Search) as the identifier of the referenced record.
+	 * Text and integer columns, virtual lookups and self references are not changed.
+	 * @param language display language
+	 * @param columnSQL display column SQL qualified with its table alias
+	 * @param tableAlias alias of the reference table in the query
+	 * @param columnName display column name
+	 * @param displayType display type of the display column
+	 * @param referenceValueId reference value of the display column
+	 * @param referenceTableName table of the reference
+	 * @param depth nested table references
+	 * @return SQL expression, or null when the column is displayed as it is
+	 */
+	private static String getTableReferenceDisplaySQL(Language language, String columnSQL, String tableAlias,
+		String columnName, int displayType, int referenceValueId, String referenceTableName, int depth) {
+		if (DisplayType.isDate(displayType)
+			|| (DisplayType.isNumeric(displayType) && displayType != DisplayType.Integer)) {
+			return DB.TO_CHAR(columnSQL, displayType, language.getAD_Language());
+		}
+		if (displayType == DisplayType.List && referenceValueId > 0) {
+			//	keep the value when the list entry does not exist
+			return "COALESCE((" + getLookup_ListEmbed(language, referenceValueId, columnSQL) + ")," + columnSQL + ")";
+		}
+		//	Lookups only for physical *_ID columns
+		if (columnName == null || !columnName.endsWith("_ID")
+			|| !columnSQL.equals(tableAlias + "." + columnName)
+			|| depth >= MAX_DISPLAY_REFERENCE_DEPTH) {
+			return null;
+		}
+		if (displayType == DisplayType.TableDir
+			|| (displayType == DisplayType.Search && referenceValueId <= 0)) {
+			//	the embedded query reads the table of the column without alias,
+			//	a self reference would read the reference table itself
+			if (MQuery.getZoomTableName(columnName).equalsIgnoreCase(referenceTableName)) {
+				return null;
+			}
+			return "(" + getLookup_TableDirEmbed(language, columnName, tableAlias) + ")";
+		}
+		if ((displayType == DisplayType.Table || displayType == DisplayType.Search) && referenceValueId > 0) {
+			final String embeddedSQL = getLookup_TableEmbed(language, columnName, tableAlias, referenceValueId, depth + 1);
+			if (Util.isEmpty(embeddedSQL, true)) {
+				return null;
+			}
+			return "(" + embeddedSQL + ")";
+		}
+		return null;
+	}	//	getTableReferenceDisplaySQL
+
+	/**
+	 *	Get Embedded Lookup SQL for Table Lookup
+	 *  @param language report language
+	 * 	@param BaseColumn base column name
+	 * 	@param BaseTable base table name
+	 *  @param AD_Reference_Value_ID reference value
+	 *  @param depth nested table references (display column that is a lookup of other reference)
+	 *	@return	SELECT Name FROM Table
+	 */
+	static private String getLookup_TableEmbed (Language language,
+		String BaseColumn, String BaseTable, int AD_Reference_Value_ID, int depth)
+	{
 		String sql = "SELECT t.TableName,ck.ColumnName AS KeyColumn,"
 			+ "cd.ColumnName AS DisplayColumn,rt.isValueDisplayed,cd.IsTranslated,"
-			+ "rt.DisplaySQL, rt.IsDisplayIdentifier "
+			+ "rt.DisplaySQL, rt.IsDisplayIdentifier, "
+			+ "cd.AD_Reference_ID AS DisplayReference_ID, cd.AD_Reference_Value_ID AS DisplayReferenceValue_ID, "
+			+ "cd.ColumnSQL AS DisplayColumnSQL "
 			+ "FROM AD_Ref_Table rt"
 			+ " INNER JOIN AD_Table t ON (rt.AD_Table_ID=t.AD_Table_ID)"
 			+ " INNER JOIN AD_Column ck ON (rt.AD_Key=ck.AD_Column_ID)"
@@ -578,8 +689,9 @@ public class MLookupFactory
 			+ "WHERE rt.AD_Reference_ID=?"
 			+ " AND rt.IsActive='Y' AND t.IsActive='Y'";
 		//
-		String	KeyColumn, DisplayColumn, TableName, TableNameAlias, displaySQL;
+		String	KeyColumn, DisplayColumn, TableName, TableNameAlias, displaySQL, displayColumnSQL;
 		boolean IsTranslated, isValueDisplayed, isDisplayIdentifier;
+		int displayReferenceId, displayReferenceValueId;
 
 		PreparedStatement pstmt = null;
 		ResultSet rs = null;
@@ -601,6 +713,9 @@ public class MLookupFactory
 			IsTranslated = rs.getString(5).equals("Y");
 			displaySQL = rs.getString(6);
 			isDisplayIdentifier = "Y".equals(rs.getString(7));
+			displayReferenceId = rs.getInt(8);
+			displayReferenceValueId = rs.getInt(9);
+			displayColumnSQL = rs.getString(10);
 		}
 		catch (SQLException e) {
 			s_log.log(Level.WARNING, sql, e);
@@ -614,6 +729,10 @@ public class MLookupFactory
 		}
 
 		if (isDisplayIdentifier && KeyColumn != null && KeyColumn.endsWith("_ID")) {
+			return getLookup_TableDirEmbed(language, KeyColumn, BaseTable, BaseColumn);
+		}
+		//	Display column is the key itself (shows the ID): display the table identifiers
+		if (Util.isEmpty(displaySQL, true) && isDisplayColumnKey(KeyColumn, DisplayColumn)) {
 			return getLookup_TableDirEmbed(language, KeyColumn, BaseTable, BaseColumn);
 		}
 
@@ -646,7 +765,17 @@ public class MLookupFactory
 		{
 			if (isValueDisplayed)
 				embedSQL.append(TableNameAlias).append(".Value||'-'||");
-			embedSQL.append(TableNameAlias).append(".").append(DisplayColumn);
+			//	as the display column is shown by its type (date, number, list, lookup)
+			String displayByTypeSQL = null;
+			if (Util.isEmpty(displaySQL, true) && Util.isEmpty(displayColumnSQL, true)) {
+				displayByTypeSQL = getTableReferenceDisplaySQL(language, TableNameAlias + "." + DisplayColumn,
+					TableNameAlias, DisplayColumn, displayReferenceId, displayReferenceValueId, TableName, depth);
+			}
+			if (displayByTypeSQL != null) {
+				embedSQL.append(displayByTypeSQL);
+			} else {
+				embedSQL.append(TableNameAlias).append(".").append(DisplayColumn);
+			}
 			//
 			embedSQL.append(" FROM ").append(TableName).append(" ").append(TableNameAlias);
 		}
