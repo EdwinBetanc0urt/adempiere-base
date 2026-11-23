@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Properties;
 import java.util.logging.Level;
 
+import org.adempiere.core.domains.models.X_AD_Reference;
 import org.compiere.util.CCache;
 import org.compiere.util.CLogMgt;
 import org.compiere.util.CLogger;
@@ -30,6 +31,7 @@ import org.compiere.util.DB;
 import org.compiere.util.DisplayType;
 import org.compiere.util.Env;
 import org.compiere.util.Language;
+import org.compiere.util.Msg;
 import org.compiere.util.Util;
 
 /**
@@ -364,6 +366,42 @@ public class MLookupFactory
 		//
 		return realSQL.toString();
 	}	//	getLookup_ListEmbed
+
+	/**
+	 * Get the SQL of an identifier column as it is displayed: the translated name for a
+	 * List (or a Button with a list reference) and the translated Yes / No for a Yes-No,
+	 * otherwise the column itself
+	 * @param language display language
+	 * @param ldc identifier column
+	 * @param columnSQL column (or virtual column SQL) qualified with its table
+	 * @return SQL expression
+	 */
+	private static String getListOrYesNoDisplaySQL(Language language, LookupDisplayColumn ldc, String columnSQL) {
+		if (ldc.DisplayType == DisplayType.YesNo) {
+			return "CASE " + columnSQL
+				+ " WHEN 'Y' THEN " + DB.TO_STRING(Msg.getMsg(language, "Y"))
+				+ " WHEN 'N' THEN " + DB.TO_STRING(Msg.getMsg(language, "N"))
+				+ " ELSE " + columnSQL + " END";
+		}
+		if (ldc.AD_Reference_ID > 0
+			&& (ldc.DisplayType == DisplayType.List
+				|| (ldc.DisplayType == DisplayType.Button && isListReference(ldc.AD_Reference_ID)))) {
+			//	keep the value when the list entry does not exist
+			return "COALESCE((" + getLookup_ListEmbed(language, ldc.AD_Reference_ID, columnSQL) + ")," + columnSQL + ")";
+		}
+		return columnSQL;
+	}	//	getListOrYesNoDisplaySQL
+
+	/**
+	 * Is the reference a List validation
+	 * @param referenceId AD_Reference_ID
+	 * @return true if list
+	 */
+	private static boolean isListReference(int referenceId) {
+		final String validationType = DB.getSQLValueString(null,
+			"SELECT ValidationType FROM AD_Reference WHERE AD_Reference_ID=?", referenceId);
+		return X_AD_Reference.VALIDATIONTYPE_ListValidation.equals(validationType);
+	}	//	isListReference
 
 	/***************************************************************************
 	 *	Get Lookup SQL for Table Lookup
@@ -798,10 +836,10 @@ public class MLookupFactory
 			{
 				displayColumn.append(DB.TO_CHAR(columnSQL, ldc.DisplayType, language.getAD_Language()));
 			}
-			//  String
+			//  String, List or Yes-No
 			else
 			{
-				displayColumn.append(columnSQL);
+				displayColumn.append(getListOrYesNoDisplaySQL(language, ldc, columnSQL));
 			}
 
 			displayColumn.append(",'-1')");
@@ -966,10 +1004,10 @@ public class MLookupFactory
 			{
 				embedSQL.append("NVL(" + DB.TO_CHAR(columnSQL, ldc.DisplayType, language.getAD_Language()) + ",'')");
 			}
-			//  String
+			//  String, List or Yes-No
 			else
 			{
-				embedSQL.append("NVL(").append(columnSQL).append(",'')");
+				embedSQL.append("NVL(").append(getListOrYesNoDisplaySQL(language, ldc, columnSQL)).append(",'')");
 			}
 		}
 
