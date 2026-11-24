@@ -388,7 +388,8 @@ public class MLookupFactory
 		return displayType == DisplayType.Table
 			&& referenceValueId <= 0
 			&& columnName != null
-			&& columnName.endsWith("_ID");
+			&& columnName.endsWith("_ID")
+		;
 	}	//	isTableDirectFallback
 
 	/**
@@ -400,9 +401,11 @@ public class MLookupFactory
 	public static void warnTableDirectFallback(String columnName, int columnId)
 	{
 		if (s_tableDirectFallbackWarned.add(columnName + "|" + columnId))
-			s_log.warning("Column " + columnName + (columnId > 0 ? " (" + columnId + ")" : "")
+			s_log.warning(
+				"Column " + columnName + (columnId > 0 ? " (" + columnId + ")" : "")
 				+ " has Table reference without AD_Reference_Value_ID, resolved as Table Direct."
-				+ " Fix the dictionary: use Table Direct or set the reference value");
+				+ " Fix the dictionary: use Table Direct or set the reference value"
+			);
 	}	//	warnTableDirectFallback
 
 	/***************************************************************************
@@ -815,8 +818,9 @@ public class MLookupFactory
 				&& ldc.ColumnName.endsWith("_ID"))
 				|| isTableDirectFallback(ldc.DisplayType, ldc.AD_Reference_ID, ldc.ColumnName))
 			{
-				if (ldc.DisplayType == DisplayType.Table)
+				if (ldc.DisplayType == DisplayType.Table) {
 					warnTableDirectFallback(ldc.ColumnName, 0);
+				}
 				String embeddedSQL;
 				if (ldc.IsVirtual)
 					embeddedSQL = getLookup_TableDirEmbed(language, ldc.ColumnName, TableName, ldc.ColumnSQL);
@@ -987,8 +991,9 @@ public class MLookupFactory
 				&& ldc.ColumnName.endsWith("_ID"))
 				|| isTableDirectFallback(ldc.DisplayType, ldc.AD_Reference_ID, ldc.ColumnName))
 			{
-				if (ldc.DisplayType == DisplayType.Table)
+				if (ldc.DisplayType == DisplayType.Table) {
 					warnTableDirectFallback(ldc.ColumnName, 0);
+				}
 				String embeddedSQL;
 				if (ldc.IsVirtual)
 					embeddedSQL = getLookup_TableDirEmbed(language, ldc.ColumnName, TableName, ldc.ColumnSQL);

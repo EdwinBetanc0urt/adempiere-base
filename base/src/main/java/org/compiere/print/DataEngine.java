@@ -512,8 +512,9 @@ public class DataEngine
 					)
 				{
 					//	Table without AD_Reference_Value_ID: dictionary error, printed as Table Direct
-					if (referenceId == DisplayType.Table)
+					if (referenceId == DisplayType.Table) {
 						MLookupFactory.warnTableDirectFallback(columnName, columnId);
+					}
 
 					//  Creates Embedded SQL in the form
 					//  SELECT ColumnTable.Name FROM ColumnTable WHERE TableName.ColumnName=ColumnTable.ColumnName
