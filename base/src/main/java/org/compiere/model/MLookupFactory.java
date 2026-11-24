@@ -210,6 +210,12 @@ public class MLookupFactory
 			info = getLookup_List(language, AD_Reference_Value_ID);
 			needToAddSecurity = false;
 		}
+		//	Table without Reference_Value on a *_ID column: dictionary error, resolve it as Table Direct
+		else if (isTableDirectFallback(AD_Reference_ID, AD_Reference_Value_ID, ColumnName))
+		{
+			warnTableDirectFallback(ColumnName, Column_ID);
+			info = getLookup_TableDir (ctx, language, WindowNo, ColumnName);
+		}
 		//	Table or Search with Reference_Value
 		else if (AD_Reference_ID == DisplayType.Table || (AD_Reference_ID == DisplayType.Search
 			&& AD_Reference_Value_ID > 0))
@@ -364,6 +370,40 @@ public class MLookupFactory
 		//
 		return realSQL.toString();
 	}	//	getLookup_ListEmbed
+
+	/** Columns already warned about the Table Direct fallback (avoids repeating the warning on every lookup) */
+	private static final java.util.Set<String> s_tableDirectFallbackWarned = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+	/**
+	 * A Table reference needs its AD_Reference_Value_ID (AD_Ref_Table) to know the referenced table.
+	 * When the dictionary is missing it on a *_ID column, the column can only be resolved by its
+	 * name, as Table Direct: e.g. SP027_Project_Budget_ID -> SP027_Project_Budget.
+	 * @param displayType AD_Reference_ID of the column
+	 * @param referenceValueId AD_Reference_Value_ID of the column
+	 * @param columnName column name
+	 * @return true when the column must be resolved as Table Direct
+	 */
+	public static boolean isTableDirectFallback(int displayType, int referenceValueId, String columnName)
+	{
+		return displayType == DisplayType.Table
+			&& referenceValueId <= 0
+			&& columnName != null
+			&& columnName.endsWith("_ID");
+	}	//	isTableDirectFallback
+
+	/**
+	 * Warn (once per column) that a Table reference without AD_Reference_Value_ID is resolved as Table Direct,
+	 * so the dictionary can be fixed.
+	 * @param columnName column name
+	 * @param columnId AD_Column_ID or AD_Process_Para_ID, 0 when unknown
+	 */
+	public static void warnTableDirectFallback(String columnName, int columnId)
+	{
+		if (s_tableDirectFallbackWarned.add(columnName + "|" + columnId))
+			s_log.warning("Column " + columnName + (columnId > 0 ? " (" + columnId + ")" : "")
+				+ " has Table reference without AD_Reference_Value_ID, resolved as Table Direct."
+				+ " Fix the dictionary: use Table Direct or set the reference value");
+	}	//	warnTableDirectFallback
 
 	/***************************************************************************
 	 *	Get Lookup SQL for Table Lookup
@@ -771,9 +811,12 @@ public class MLookupFactory
 				displayColumn.append(DB.TO_CHAR(columnSQL, ldc.DisplayType, language.getAD_Language()));
 			}
 			//  TableDir or Search
-			else if ((ldc.DisplayType == DisplayType.TableDir || (ldc.DisplayType == DisplayType.Search && ldc.AD_Reference_ID <= 0))
+			else if (((ldc.DisplayType == DisplayType.TableDir || (ldc.DisplayType == DisplayType.Search && ldc.AD_Reference_ID <= 0))
 				&& ldc.ColumnName.endsWith("_ID"))
+				|| isTableDirectFallback(ldc.DisplayType, ldc.AD_Reference_ID, ldc.ColumnName))
 			{
+				if (ldc.DisplayType == DisplayType.Table)
+					warnTableDirectFallback(ldc.ColumnName, 0);
 				String embeddedSQL;
 				if (ldc.IsVirtual)
 					embeddedSQL = getLookup_TableDirEmbed(language, ldc.ColumnName, TableName, ldc.ColumnSQL);
@@ -940,9 +983,12 @@ public class MLookupFactory
 				embedSQL.append("NVL(" + DB.TO_CHAR(columnSQL, ldc.DisplayType, language.getAD_Language()) + ",'')");
 			}
 			//  TableDir or Search
-			else if ((ldc.DisplayType == DisplayType.TableDir || (ldc.DisplayType == DisplayType.Search && ldc.AD_Reference_ID <= 0))
+			else if (((ldc.DisplayType == DisplayType.TableDir || (ldc.DisplayType == DisplayType.Search && ldc.AD_Reference_ID <= 0))
 				&& ldc.ColumnName.endsWith("_ID"))
+				|| isTableDirectFallback(ldc.DisplayType, ldc.AD_Reference_ID, ldc.ColumnName))
 			{
+				if (ldc.DisplayType == DisplayType.Table)
+					warnTableDirectFallback(ldc.ColumnName, 0);
 				String embeddedSQL;
 				if (ldc.IsVirtual)
 					embeddedSQL = getLookup_TableDirEmbed(language, ldc.ColumnName, TableName, ldc.ColumnSQL);

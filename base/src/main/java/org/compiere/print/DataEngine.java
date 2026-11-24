@@ -508,8 +508,12 @@ public class DataEngine
 				//	-- Parent, TableDir (and unqualified Search) --
 				else if (referenceId == DisplayType.TableDir
 						|| (referenceId == DisplayType.Search && referenceValueId == 0)
+						|| MLookupFactory.isTableDirectFallback(referenceId, referenceValueId, columnName)
 					)
 				{
+					//	Table without AD_Reference_Value_ID: dictionary error, printed as Table Direct
+					if (referenceId == DisplayType.Table)
+						MLookupFactory.warnTableDirectFallback(columnName, columnId);
 
 					//  Creates Embedded SQL in the form
 					//  SELECT ColumnTable.Name FROM ColumnTable WHERE TableName.ColumnName=ColumnTable.ColumnName
