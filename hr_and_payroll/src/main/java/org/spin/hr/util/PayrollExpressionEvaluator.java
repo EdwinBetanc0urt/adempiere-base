@@ -695,6 +695,24 @@ public class PayrollExpressionEvaluator {
                     }
                 }
 
+                case "SAME_PERIOD": {
+                    if (args.size() != 2)
+                        throw new AdempiereException("SAME_PERIOD requires exactly 2 arguments: SAME_PERIOD(\"concept\", \"payroll\")");
+                    Object proc = context.get("engineHelper");
+                    if (proc == null) return null;
+                    String conceptCode = args.get(0) == null ? null : args.get(0).toString();
+                    if (conceptCode == null) return null;
+                    String payrollCode = args.get(1) == null ? null : args.get(1).toString();
+                    try {
+                        Method m = proc.getClass().getMethod("getPeriodConceptValue", String.class, String.class);
+                        return m.invoke(proc, conceptCode, payrollCode);
+                    } catch (java.lang.reflect.InvocationTargetException e) {
+                        return null;
+                    } catch (Exception e) {
+                        throw new AdempiereException("Error in SAME_PERIOD: " + e.getMessage());
+                    }
+                }
+
                 case "COMMISSION": {
                     require(name, args, 1);
                     Object proc = context.get("engineHelper");

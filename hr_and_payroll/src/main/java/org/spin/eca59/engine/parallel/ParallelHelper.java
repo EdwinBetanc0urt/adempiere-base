@@ -792,7 +792,70 @@ public class 	ParallelHelper implements EngineHelper {
 		}
 		return 0.0;
 	} // getConcept
-	
+
+	/**
+	 * Get the typed value of a concept from the previous period of the current payroll
+	 * @param conceptCode
+	 * @return typed value or null
+	 */
+	public Object getLastConceptValue(String conceptCode) {
+		return getLastConceptValue(conceptCode, null);
+	}
+
+	/**
+	 * Get the typed value of a concept from the last period that ended before the current one
+	 * @param conceptCode
+	 * @param payrollValue payroll code, or null to use the current payroll
+	 * @return typed value or null
+	 */
+	public Object getLastConceptValue(String conceptCode, String payrollValue) {
+		if(Util.isEmpty(conceptCode)) {
+			return null;
+		}
+		String code = conceptCode.trim();
+		return getMovementValue(code, getLastMovement(code, payrollValue, engineProcess.getValidFrom(), false));
+	}
+
+	/**
+	 * Get the typed value of a concept from a completed process of another payroll
+	 * that covers exactly the same period dates as the current process
+	 * @param conceptCode
+	 * @param payrollValue
+	 * @return typed value or null when the other payroll has no movement in this period
+	 */
+	public Object getPeriodConceptValue(String conceptCode, String payrollValue) {
+		if(Util.isEmpty(conceptCode)) {
+			return null;
+		}
+		String code = conceptCode.trim();
+		return getMovementValue(code, MHRMovement.getPeriodMovement(ruleContext.getContext(), code, payrollValue,
+				engineEmployee.getBusinessPartnerId(), engineProcess.getValidFrom(), engineProcess.getValidTo(), null));
+	}
+
+	private Object getMovementValue(String conceptCode, MHRMovement movement) {
+		if(movement == null) {
+			return null;
+		}
+		MHRConcept concept = MHRConcept.getByValue(ruleContext.getContext(), conceptCode, null);
+		if(concept == null) {
+			return null;
+		}
+		String type = concept.getColumnType();
+		if(MHRConcept.COLUMNTYPE_Text.equals(type)) {
+			return movement.getTextMsg();
+		}
+		if(MHRConcept.COLUMNTYPE_Date.equals(type)) {
+			return movement.getServiceDate();
+		}
+		if(MHRConcept.COLUMNTYPE_Amount.equals(type)) {
+			return movement.getAmount();
+		}
+		if(MHRConcept.COLUMNTYPE_Quantity.equals(type)) {
+			return movement.getQty();
+		}
+		return null;
+	}
+
 	/**
 	 * Get last concept date without break date
 	 * @param conceptValue

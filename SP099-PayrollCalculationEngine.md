@@ -163,7 +163,7 @@ se resuelve como un **concepto de nómina** por su `Value`:
 | Patrón | Ejemplo | Equivale a |
 |---|---|---|
 | `CONCEPTO` | `SD` | Valor numérico/texto/fecha del concepto actual |
-| `CONCEPTO_LAST` | `SD_LAST` | Último valor histórico del concepto |
+| `CONCEPTO_LAST` | `SD_LAST` | Último valor del concepto en la nómina actual, de un período que terminó antes del actual |
 | `CONCEPTO_ATTR` | `ANTIGUEDAD_ATTR` | Atributo del concepto (`getAttribute`) |
 | `CONCEPTO_TYPE_SUM` | `INGRESOS_TYPE_SUM` | Suma de todos los conceptos del tipo |
 | `CONCEPTO_GROUP_SUM` | `BASE_GROUP_SUM` | Suma por grupo (`getConceptGroup`) |
@@ -216,7 +216,8 @@ se resuelve como un **concepto de nómina** por su `Value`:
 
 | Función | Argumentos | Descripción | Ejemplo |
 |---|---|---|---|
-| `LAST(concepto, nomina)` | String, String | Último valor del concepto en la nómina indicada | `LAST('SD', 'NOM_MENS')` |
+| `LAST(concepto, nomina)` | String, String | Último valor del concepto en la nómina indicada, de un período que terminó antes del actual | `LAST('SD', 'NOM_MENS')` |
+| `SAME_PERIOD(concepto, nomina)` | String, String | Valor del concepto en un proceso completado de la nómina indicada que cubre exactamente las mismas fechas del período actual; `null` si no hay | `SAME_PERIOD('A_GRAV_BPS', 'NOM_LICENCIA_SV')` |
 | `COMMISSION(tipo)` | String | Comisión del empleado por tipo de base | `COMMISSION('S')` |
 | `COMMISSION_RANGE(desde, hasta, tipo)` | Timestamp, Timestamp, String | Comisión en rango de fechas | `COMMISSION_RANGE(_From, _To, 'S')` |
 
