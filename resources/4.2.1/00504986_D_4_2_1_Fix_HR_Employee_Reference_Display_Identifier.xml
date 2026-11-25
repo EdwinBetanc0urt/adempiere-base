@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<Migrations>
+  <Migration EntityType="D" Name="Fix_HR_Employee_Reference_Display_Identifier" ReleaseNo="4.2.1" SeqNo="504986">
+    <Comments>Display the HR_Employee identifier on the HR_Employee table reference</Comments>
+    <Step SeqNo="10" StepType="AD">
+      <PO AD_Table_ID="103" Action="U" Record_ID="54065" Table="AD_Ref_Table">
+        <Data AD_Column_ID="62122" Column="IsDisplayIdentifier" oldValue="false">true</Data>
+      </PO>
+    </Step>
+  </Migration>
+</Migrations>
