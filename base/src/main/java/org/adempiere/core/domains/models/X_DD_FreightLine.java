@@ -277,6 +277,27 @@ public class X_DD_FreightLine extends PO implements I_DD_FreightLine, I_Persiste
 		return bd;
 	}
 
+	/** Set Delivered.
+		@param IsDelivered Delivered	  */
+	public void setIsDelivered (boolean IsDelivered)
+	{
+		set_Value (COLUMNNAME_IsDelivered, Boolean.valueOf(IsDelivered));
+	}
+
+	/** Get Delivered.
+		@return Delivered	  */
+	public boolean isDelivered () 
+	{
+		Object oo = get_Value(COLUMNNAME_IsDelivered);
+		if (oo != null) 
+		{
+			 if (oo instanceof Boolean) 
+				 return ((Boolean)oo).booleanValue(); 
+			return "Y".equals(oo);
+		}
+		return false;
+	}
+
 	/** Set Invoiced.
 		@param IsInvoiced 
 		Is this invoiced?
