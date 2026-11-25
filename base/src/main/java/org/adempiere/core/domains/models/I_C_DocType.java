@@ -427,6 +427,19 @@ public interface I_C_DocType
 	  */
 	public boolean isDocNoControlled();
 
+    /** Column name IsExcludeFromAging */
+    public static final String COLUMNNAME_IsExcludeFromAging = "IsExcludeFromAging";
+
+	/** Set Exclude From Aging.
+	  * Excludes the document from the aging report and dunning calculation.
+	  */
+	public void setIsExcludeFromAging (boolean IsExcludeFromAging);
+
+	/** Get Exclude From Aging.
+	  * Excludes the document from the aging report and dunning calculation.
+	  */
+	public boolean isExcludeFromAging();
+
     /** Column name IsIndexed */
     public static final String COLUMNNAME_IsIndexed = "IsIndexed";
 

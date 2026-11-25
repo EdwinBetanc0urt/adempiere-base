@@ -811,6 +811,30 @@ public class X_C_DocType extends PO implements I_C_DocType, I_Persistent
 		return false;
 	}
 
+	/** Set Exclude From Aging.
+		@param IsExcludeFromAging
+		Excludes the document from the aging report and dunning calculation.
+	  */
+	public void setIsExcludeFromAging (boolean IsExcludeFromAging)
+	{
+		set_Value (COLUMNNAME_IsExcludeFromAging, Boolean.valueOf(IsExcludeFromAging));
+	}
+
+	/** Get Exclude From Aging.
+		@return Excludes the document from the aging report and dunning calculation.
+	  */
+	public boolean isExcludeFromAging ()
+	{
+		Object oo = get_Value(COLUMNNAME_IsExcludeFromAging);
+		if (oo != null)
+		{
+			 if (oo instanceof Boolean)
+				 return ((Boolean)oo).booleanValue();
+			return "Y".equals(oo);
+		}
+		return false;
+	}
+
 	/** Set Generate Manual Document.
 	 @param IsGenerateManualDocument Generate Manual Document	  */
 	public void setIsGenerateManualDocument (boolean IsGenerateManualDocument)
