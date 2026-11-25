@@ -164,6 +164,9 @@ public class DunningRunCreate extends DunningRunCreateAbstract {
 			+ "WHERE i.IsPaid='N' AND i.AD_Client_ID=?"				//	##3
 			+ " AND i.DocStatus IN ('CO','CL')"
 			+ " AND (i.DunningGrace IS NULL OR i.DunningGrace<?) "
+			//	Exclude document types flagged as excluded from aging
+			+ " AND NOT EXISTS (SELECT 1 FROM C_DocType dt "
+				+ "WHERE dt.C_DocType_ID=i.C_DocType_ID AND dt.IsExcludeFromAging='Y') "
 		//	Only BP(Group) with Dunning defined
 			+ " AND EXISTS (SELECT 1 FROM C_DunningLevel dl "
 				+ "WHERE dl.C_DunningLevel_ID=?"	//	//	##4
@@ -426,6 +429,9 @@ public class DunningRunCreate extends DunningRunCreateAbstract {
 			+ " AND IsAllocated='N' AND C_BPartner_ID IS NOT NULL"
 			+ " AND C_Charge_ID IS NULL"
 			+ " AND DocStatus IN ('CO','CL')"
+			//	Exclude document types flagged as excluded from aging
+			+ " AND NOT EXISTS (SELECT 1 FROM C_DocType dt "
+				+ "WHERE dt.C_DocType_ID=p.C_DocType_ID AND dt.IsExcludeFromAging='Y')"
 			//	Only BP(Group) with Dunning defined
 			+ " AND EXISTS (SELECT 1 FROM C_DunningLevel dl "
 				+ "WHERE dl.C_DunningLevel_ID=?"	//	//	##2
