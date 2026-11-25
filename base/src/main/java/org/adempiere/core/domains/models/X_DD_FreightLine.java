@@ -237,6 +237,23 @@ public class X_DD_FreightLine extends PO implements I_DD_FreightLine, I_Persiste
 		return ii.intValue();
 	}
 
+	/** Set Description.
+		@param Description 
+		Optional short description of the record
+	  */
+	public void setDescription (String Description)
+	{
+		set_Value (COLUMNNAME_Description, Description);
+	}
+
+	/** Get Description.
+		@return Optional short description of the record
+	  */
+	public String getDescription () 
+	{
+		return (String)get_Value(COLUMNNAME_Description);
+	}
+
 	/** Set Freight Amount.
 		@param FreightAmt 
 		Freight Amount 
