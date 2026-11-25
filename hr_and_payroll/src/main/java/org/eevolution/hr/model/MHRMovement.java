@@ -600,7 +600,56 @@ public class MHRMovement extends X_HR_Movement
 			.setOrderBy(I_HR_Movement.COLUMNNAME_ValidFrom + " DESC")
 			.<MHRMovement>first();
 	}
-	
+
+	/**
+	 * Get the movement of a concept from a completed process of another payroll
+	 * that covers exactly the same period dates
+	 * @param ctx
+	 * @param conceptValue
+	 * @param payrollValue
+	 * @param partnerId
+	 * @param validFrom
+	 * @param validTo
+	 * @param trxName
+	 * @return the latest matching movement or null when there is none
+	 */
+	public static MHRMovement getPeriodMovement(
+			Properties ctx,
+			String conceptValue,
+			String payrollValue,
+			int partnerId,
+			Timestamp validFrom,
+			Timestamp validTo,
+			String trxName) {
+		if(Util.isEmpty(payrollValue) || Util.isEmpty(conceptValue) || partnerId <= 0) {
+			return null;
+		}
+		MHRPayroll payroll = MHRPayroll.getByValue(ctx, payrollValue, trxName);
+		MHRConcept concept = MHRConcept.getByValue(ctx, conceptValue, trxName);
+		if(payroll == null || concept == null) {
+			return null;
+		}
+		StringBuffer whereClause = new StringBuffer();
+		ArrayList<Object> params = new ArrayList<Object>();
+		whereClause.append(MHRMovement.COLUMNNAME_HR_Concept_ID + "=?"
+				+ " AND " + MHRMovement.COLUMNNAME_C_BPartner_ID + "=?"
+				+ " AND " + MHRMovement.COLUMNNAME_ValidFrom + "=?"
+				+ " AND " + MHRMovement.COLUMNNAME_ValidTo + "=?"
+				+ " AND EXISTS (SELECT 1 FROM HR_Process p"
+				+ " WHERE HR_Movement.HR_Process_ID = p.HR_Process_ID"
+				+ " AND p.DocStatus IN('CO', 'CL')"
+				+ " AND p.HR_Payroll_ID=?)");
+		params.add(concept.get_ID());
+		params.add(partnerId);
+		params.add(validFrom);
+		params.add(validTo);
+		params.add(payroll.getHR_Payroll_ID());
+		return new Query(ctx, I_HR_Movement.Table_Name, whereClause.toString(), trxName)
+			.setParameters(params)
+			.setOrderBy(I_HR_Movement.COLUMNNAME_HR_Movement_ID + " DESC")
+			.<MHRMovement>first();
+	}
+
 	/**
 	 * Get a amount from the last concept
 	 * @param ctx
