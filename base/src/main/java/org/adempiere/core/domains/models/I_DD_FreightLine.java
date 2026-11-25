@@ -199,6 +199,15 @@ public interface I_DD_FreightLine
 	  */
 	public boolean isActive();
 
+    /** Column name IsDelivered */
+    public static final String COLUMNNAME_IsDelivered = "IsDelivered";
+
+	/** Set Delivered	  */
+	public void setIsDelivered (boolean IsDelivered);
+
+	/** Get Delivered	  */
+	public boolean isDelivered();
+
     /** Column name IsInvoiced */
     public static final String COLUMNNAME_IsInvoiced = "IsInvoiced";
 
