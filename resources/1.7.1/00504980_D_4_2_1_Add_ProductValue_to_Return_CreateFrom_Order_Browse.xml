@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<Migrations>
+  <Migration EntityType="D" Name="Add_ProductValue_to_Return_CreateFrom_Order_Browse" ReleaseNo="4.2.1" SeqNo="504980">
+    <Comments>Add Product Key column to Material Return Create From Return Order browse</Comments>
+    <Step DBType="Postgres" Parse="Y" SeqNo="10" StepType="SQL">
+      <SQLStatement>DROP VIEW IF EXISTS RV_InOutRMA_CreateFrom;
+CREATE OR REPLACE VIEW RV_InOutRMA_CreateFrom AS
+--  From Order
+SELECT l.AD_Client_ID, l.AD_Org_ID, l.CreatedBy, l.Created, l.UpdatedBy, l.Updated, l.IsActive, l.C_OrderLine_ID AS RV_InOutRMA_CreateFrom_ID, l.Line,
+((CASE WHEN l.QtyOrdered = 0 THEN 0 ELSE l.QtyEntered / l.QtyOrdered END) * (l.QtyOrdered - SUM(COALESCE(iol.MovementQty, 0)))) QtyEntered,
+l.C_UOM_ID, (l.QtyOrdered - SUM(COALESCE(iol.MovementQty, 0))) MovementQty,
+(CASE WHEN l.QtyOrdered = 0 THEN 0 ELSE l.QtyEntered / l.QtyOrdered END) Multiplier,
+COALESCE(p.Name, c.Name) AS Name, l.M_Product_ID, l.M_AttributeSetInstance_ID, l.C_Charge_ID, l.Description, po.VendorProductNo,
+-- Reference
+o.C_Order_ID, NULL::NUMERIC(10, 0) AS C_Invoice_ID, NULL::NUMERIC(10, 0) AS M_InOut_ID, NULL::NUMERIC(10, 0) AS M_RMA_ID, o.DateOrdered AS DateDoc, o.C_BPartner_ID, o.DocStatus, p.Value AS ProductValue
+FROM C_Order o
+INNER JOIN C_OrderLine l ON(l.C_Order_ID = o.C_Order_ID)
+LEFT JOIN LATERAL (
+    SELECT ppo.VendorProductNo
+    FROM M_Product_PO ppo
+    WHERE ppo.M_Product_ID = l.M_Product_ID
+      AND ppo.C_BPartner_ID = o.C_BPartner_ID
+      AND ppo.C_Currency_ID = o.C_Currency_ID
+      AND ppo.IsActive = 'Y'
+      AND ppo.AD_Org_ID IN (0, o.AD_Org_ID)
+    ORDER BY ppo.AD_Org_ID DESC LIMIT 1
+) po ON true
+LEFT JOIN M_Product p ON (l.M_Product_ID = p.M_Product_ID)
+LEFT JOIN C_Charge c ON (l.C_Charge_ID = c.C_Charge_ID)
+LEFT JOIN (SELECT iol_sub.C_OrderLine_ID, iol_sub.MovementQty
+                FROM M_InOut io_sub
+                INNER JOIN M_InOutLine iol_sub ON(iol_sub.M_InOut_ID = io_sub.M_InOut_ID)
+                WHERE io_sub.DocStatus NOT IN('VO', 'IN', 'IP', 'RE', 'CL')
+                AND iol_sub.C_OrderLine_ID IS NOT NULL) iol ON(iol.C_OrderLine_ID = l.C_OrderLine_ID)
+WHERE l.QtyOrdered &lt;&gt; 0
+GROUP BY l.AD_Client_ID, l.AD_Org_ID, l.CreatedBy, l.Created, l.UpdatedBy, l.Updated, l.IsActive, l.C_OrderLine_ID, l.Line,
+l.QtyOrdered, l.QtyEntered, l.C_UOM_ID, p.Name, c.Name, l.M_Product_ID,
+l.M_AttributeSetInstance_ID, l.C_Charge_ID, l.Description, po.VendorProductNo,
+o.C_Order_ID, o.DateOrdered, o.C_BPartner_ID, o.DocStatus, p.Value
+HAVING(l.QtyOrdered - SUM(COALESCE(iol.MovementQty, 0)) &lt;&gt; 0);</SQLStatement>
+      <RollbackStatement>DROP VIEW IF EXISTS RV_InOutRMA_CreateFrom;
+CREATE OR REPLACE VIEW RV_InOutRMA_CreateFrom AS
+--  From Order
+SELECT l.AD_Client_ID, l.AD_Org_ID, l.CreatedBy, l.Created, l.UpdatedBy, l.Updated, l.IsActive, l.C_OrderLine_ID AS RV_InOutRMA_CreateFrom_ID, l.Line,
+((CASE WHEN l.QtyOrdered = 0 THEN 0 ELSE l.QtyEntered / l.QtyOrdered END) * (l.QtyOrdered - SUM(COALESCE(iol.MovementQty, 0)))) QtyEntered,
+l.C_UOM_ID, (l.QtyOrdered - SUM(COALESCE(iol.MovementQty, 0))) MovementQty,
+(CASE WHEN l.QtyOrdered = 0 THEN 0 ELSE l.QtyEntered / l.QtyOrdered END) Multiplier,
+COALESCE(p.Name, c.Name) AS Name, l.M_Product_ID, l.M_AttributeSetInstance_ID, l.C_Charge_ID, l.Description, po.VendorProductNo,
+-- Reference
+o.C_Order_ID, NULL::NUMERIC(10, 0) AS C_Invoice_ID, NULL::NUMERIC(10, 0) AS M_InOut_ID, NULL::NUMERIC(10, 0) AS M_RMA_ID, o.DateOrdered AS DateDoc, o.C_BPartner_ID, o.DocStatus
+FROM C_Order o
+INNER JOIN C_OrderLine l ON(l.C_Order_ID = o.C_Order_ID)
+LEFT JOIN LATERAL (
+    SELECT ppo.VendorProductNo
+    FROM M_Product_PO ppo
+    WHERE ppo.M_Product_ID = l.M_Product_ID
+      AND ppo.C_BPartner_ID = o.C_BPartner_ID
+      AND ppo.C_Currency_ID = o.C_Currency_ID
+      AND ppo.IsActive = 'Y'
+      AND ppo.AD_Org_ID IN (0, o.AD_Org_ID)
+    ORDER BY ppo.AD_Org_ID DESC LIMIT 1
+) po ON true
+LEFT JOIN M_Product p ON (l.M_Product_ID = p.M_Product_ID)
+LEFT JOIN C_Charge c ON (l.C_Charge_ID = c.C_Charge_ID)
+LEFT JOIN (SELECT iol_sub.C_OrderLine_ID, iol_sub.MovementQty
+                FROM M_InOut io_sub
+                INNER JOIN M_InOutLine iol_sub ON(iol_sub.M_InOut_ID = io_sub.M_InOut_ID)
+                WHERE io_sub.DocStatus NOT IN('VO', 'IN', 'IP', 'RE', 'CL')
+                AND iol_sub.C_OrderLine_ID IS NOT NULL) iol ON(iol.C_OrderLine_ID = l.C_OrderLine_ID)
+WHERE l.QtyOrdered &lt;&gt; 0
+GROUP BY l.AD_Client_ID, l.AD_Org_ID, l.CreatedBy, l.Created, l.UpdatedBy, l.Updated, l.IsActive, l.C_OrderLine_ID, l.Line,
+l.QtyOrdered, l.QtyEntered, l.C_UOM_ID, p.Name, c.Name, l.M_Product_ID,
+l.M_AttributeSetInstance_ID, l.C_Charge_ID, l.Description, po.VendorProductNo,
+o.C_Order_ID, o.DateOrdered, o.C_BPartner_ID, o.DocStatus
+HAVING(l.QtyOrdered - SUM(COALESCE(iol.MovementQty, 0)) &lt;&gt; 0);</RollbackStatement>
+    </Step>
+    <Step SeqNo="20" StepType="AD">
+      <PO AD_Table_ID="101" Action="I" Record_ID="211381" Table="AD_Column">
+        <Data AD_Column_ID="112" Column="Description">Key of the Product</Data>
+        <Data AD_Column_ID="548" Column="IsActive">true</Data>
+        <Data AD_Column_ID="90939" Column="AD_Image_ID" isNewNull="true"/>
+        <Data AD_Column_ID="549" Column="Created">2026-11-17 12:00:00.000</Data>
+        <Data AD_Column_ID="3388" Column="ValueMin" isNewNull="true"/>
+        <Data AD_Column_ID="551" Column="Updated">2026-11-17 12:00:00.000</Data>
+        <Data AD_Column_ID="3389" Column="ValueMax" isNewNull="true"/>
+        <Data AD_Column_ID="109" Column="AD_Column_ID">211381</Data>
+        <Data AD_Column_ID="126" Column="IsIdentifier">false</Data>
+        <Data AD_Column_ID="111" Column="Name">Product Key</Data>
+        <Data AD_Column_ID="124" Column="IsMandatory">false</Data>
+        <Data AD_Column_ID="125" Column="IsTranslated">false</Data>
+        <Data AD_Column_ID="117" Column="DefaultValue" isNewNull="true"/>
+        <Data AD_Column_ID="1179" Column="VFormat" isNewNull="true"/>
+        <Data AD_Column_ID="120" Column="IsParent">false</Data>
+        <Data AD_Column_ID="6244" Column="IsSelectionColumn">false</Data>
+        <Data AD_Column_ID="6483" Column="IsSyncDatabase">N</Data>
+        <Data AD_Column_ID="119" Column="IsKey">false</Data>
+        <Data AD_Column_ID="6245" Column="ReadOnlyLogic" isNewNull="true"/>
+        <Data AD_Column_ID="56352" Column="FormatPattern" isNewNull="true"/>
+        <Data AD_Column_ID="50218" Column="MandatoryLogic" isNewNull="true"/>
+        <Data AD_Column_ID="110" Column="Version">0</Data>
+        <Data AD_Column_ID="13448" Column="ColumnSQL" isNewNull="true"/>
+        <Data AD_Column_ID="116" Column="ColumnName">ProductValue</Data>
+        <Data AD_Column_ID="113" Column="Help" isNewNull="true"/>
+        <Data AD_Column_ID="3360" Column="IsUpdateable">false</Data>
+        <Data AD_Column_ID="1692" Column="Callout" isNewNull="true"/>
+        <Data AD_Column_ID="11617" Column="IsAlwaysUpdateable">false</Data>
+        <Data AD_Column_ID="128" Column="IsEncrypted">N</Data>
+        <Data AD_Column_ID="54358" Column="InfoFactoryClass" isNewNull="true"/>
+        <Data AD_Column_ID="56187" Column="IsAllowLogging">true</Data>
+        <Data AD_Column_ID="56149" Column="IsAutocomplete">false</Data>
+        <Data AD_Column_ID="68024" Column="IsRange">false</Data>
+        <Data AD_Column_ID="62199" Column="IsAllowCopy">true</Data>
+        <Data AD_Column_ID="127" Column="SeqNo">0</Data>
+        <Data AD_Column_ID="6482" Column="EntityType">D</Data>
+        <Data AD_Column_ID="359" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="360" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="59702" Column="AD_Chart_ID" isNewNull="true"/>
+        <Data AD_Column_ID="114" Column="AD_Table_ID">54687</Data>
+        <Data AD_Column_ID="550" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="2608" Column="AD_Element_ID">1675</Data>
+        <Data AD_Column_ID="227" Column="AD_Reference_Value_ID" isNewNull="true"/>
+        <Data AD_Column_ID="115" Column="AD_Val_Rule_ID" isNewNull="true"/>
+        <Data AD_Column_ID="118" Column="FieldLength">40</Data>
+        <Data AD_Column_ID="226" Column="AD_Reference_ID">10</Data>
+        <Data AD_Column_ID="552" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="84306" Column="UUID">aae0b95f-ab5e-4cc6-b10b-b8302e70ea79</Data>
+        <Data AD_Column_ID="3369" Column="AD_Process_ID" isNewNull="true"/>
+        <Data AD_Column_ID="92541" Column="RequiresSync">false</Data>
+        <Data AD_Column_ID="92542" Column="NameOldValue" isNewNull="true"/>
+      </PO>
+    </Step>
+    <Step SeqNo="30" StepType="AD">
+      <PO AD_Table_ID="53232" Action="I" Record_ID="91130" Table="AD_View_Column">
+        <Data AD_Column_ID="58104" Column="Help" isNewNull="true"/>
+        <Data AD_Column_ID="58106" Column="ColumnSQL">cf.ProductValue</Data>
+        <Data AD_Column_ID="58105" Column="Name">Product Key</Data>
+        <Data AD_Column_ID="58107" Column="ColumnName">CF_ProductValue</Data>
+        <Data AD_Column_ID="58102" Column="Description">Key of the Product</Data>
+        <Data AD_Column_ID="58100" Column="AD_View_Column_ID">91130</Data>
+        <Data AD_Column_ID="58093" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="58094" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="58103" Column="EntityType">D</Data>
+        <Data AD_Column_ID="84462" Column="UUID">b6b90ce4-8164-46ce-a8f9-0a9d2bd249de</Data>
+        <Data AD_Column_ID="58095" Column="IsActive">true</Data>
+        <Data AD_Column_ID="58096" Column="Created">2026-11-16 23:30:00.000</Data>
+        <Data AD_Column_ID="58097" Column="Updated">2026-11-16 23:30:00.000</Data>
+        <Data AD_Column_ID="58101" Column="AD_View_Definition_ID">50450</Data>
+        <Data AD_Column_ID="58099" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="58108" Column="AD_View_ID">50165</Data>
+        <Data AD_Column_ID="58109" Column="AD_Column_ID">211381</Data>
+        <Data AD_Column_ID="58098" Column="CreatedBy">100</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="40" StepType="AD">
+      <PO AD_Table_ID="53228" Action="I" Record_ID="91130" Table="AD_View_Column_Trl">
+        <Data AD_Column_ID="58044" Column="Updated">2026-11-16 23:30:00.000</Data>
+        <Data AD_Column_ID="58042" Column="IsActive">true</Data>
+        <Data AD_Column_ID="58043" Column="Created">2026-11-16 23:30:00.000</Data>
+        <Data AD_Column_ID="58049" Column="Description">Código del producto</Data>
+        <Data AD_Column_ID="58050" Column="Help" isNewNull="true"/>
+        <Data AD_Column_ID="58051" Column="IsTranslated">true</Data>
+        <Data AD_Column_ID="58052" Column="Name">Código Producto</Data>
+        <Data AD_Column_ID="58047" Column="AD_View_Column_ID">91130</Data>
+        <Data AD_Column_ID="58040" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="58041" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="58045" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="58048" Column="AD_Language">es_MX</Data>
+        <Data AD_Column_ID="58046" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="84463" Column="UUID">eb0741da-132a-4f79-ac63-5a8ab2840313</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="50" StepType="AD">
+      <PO AD_Table_ID="53223" Action="I" Record_ID="91066" Table="AD_Browse_Field">
+        <Data AD_Column_ID="64355" Column="DefaultValue2" isNewNull="true"/>
+        <Data AD_Column_ID="64356" Column="DisplayLogic" isNewNull="true"/>
+        <Data AD_Column_ID="57964" Column="Created">2026-11-16 23:30:00.000</Data>
+        <Data AD_Column_ID="57963" Column="IsActive">true</Data>
+        <Data AD_Column_ID="57965" Column="Updated">2026-11-16 23:30:00.000</Data>
+        <Data AD_Column_ID="57980" Column="IsRange">false</Data>
+        <Data AD_Column_ID="57979" Column="IsQueryCriteria">false</Data>
+        <Data AD_Column_ID="57985" Column="IsMandatory">false</Data>
+        <Data AD_Column_ID="64354" Column="DefaultValue" isNewNull="true"/>
+        <Data AD_Column_ID="64853" Column="InfoFactoryClass" isNewNull="true"/>
+        <Data AD_Column_ID="57974" Column="Help" isNewNull="true"/>
+        <Data AD_Column_ID="57976" Column="IsDisplayed">true</Data>
+        <Data AD_Column_ID="57977" Column="IsIdentifier">false</Data>
+        <Data AD_Column_ID="57978" Column="IsKey">false</Data>
+        <Data AD_Column_ID="63579" Column="IsReadOnly">true</Data>
+        <Data AD_Column_ID="57975" Column="IsCentrallyMaintained">true</Data>
+        <Data AD_Column_ID="64222" Column="IsOrderBy">false</Data>
+        <Data AD_Column_ID="57972" Column="Description">Key of the Product</Data>
+        <Data AD_Column_ID="57981" Column="Name">Product Key</Data>
+        <Data AD_Column_ID="64358" Column="ReadOnlyLogic" isNewNull="true"/>
+        <Data AD_Column_ID="64359" Column="VFormat" isNewNull="true"/>
+        <Data AD_Column_ID="64360" Column="ValueMax" isNewNull="true"/>
+        <Data AD_Column_ID="64361" Column="ValueMin" isNewNull="true"/>
+        <Data AD_Column_ID="67114" Column="Callout" isNewNull="true"/>
+        <Data AD_Column_ID="81229" Column="IsInfoOnly">false</Data>
+        <Data AD_Column_ID="57961" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="57962" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="57973" Column="EntityType">D</Data>
+        <Data AD_Column_ID="57968" Column="AD_Browse_Field_ID">91066</Data>
+        <Data AD_Column_ID="57982" Column="SeqNo">35</Data>
+        <Data AD_Column_ID="57984" Column="AD_Reference_Value_ID" isNewNull="true"/>
+        <Data AD_Column_ID="57967" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="57966" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="63218" Column="Axis_Column_ID" isNewNull="true"/>
+        <Data AD_Column_ID="64353" Column="AD_Val_Rule_ID" isNewNull="true"/>
+        <Data AD_Column_ID="57970" Column="AD_Reference_ID">10</Data>
+        <Data AD_Column_ID="57983" Column="AD_Browse_ID">50192</Data>
+        <Data AD_Column_ID="63219" Column="Axis_Parent_Column_ID" isNewNull="true"/>
+        <Data AD_Column_ID="64221" Column="SortNo">0</Data>
+        <Data AD_Column_ID="64357" Column="FieldLength">0</Data>
+        <Data AD_Column_ID="78559" Column="SeqNoGrid">0</Data>
+        <Data AD_Column_ID="84296" Column="UUID">a878cf2f-b995-47dc-8584-43d05acd891d</Data>
+        <Data AD_Column_ID="57969" Column="AD_Element_ID">1675</Data>
+        <Data AD_Column_ID="57971" Column="AD_View_Column_ID">91130</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="60" StepType="AD">
+      <PO AD_Table_ID="53227" Action="I" Record_ID="0" Table="AD_Browse_Field_Trl">
+        <Data AD_Column_ID="84297" Column="UUID">49d602d7-9c31-4322-a43c-93f4d26b63aa</Data>
+        <Data AD_Column_ID="58029" Column="IsActive">true</Data>
+        <Data AD_Column_ID="58030" Column="Created">2026-11-16 23:30:00.000</Data>
+        <Data AD_Column_ID="58031" Column="Updated">2026-11-16 23:30:00.000</Data>
+        <Data AD_Column_ID="58036" Column="Description">Código del producto</Data>
+        <Data AD_Column_ID="58037" Column="Help" isNewNull="true"/>
+        <Data AD_Column_ID="58038" Column="IsTranslated">true</Data>
+        <Data AD_Column_ID="58039" Column="Name">Código Producto</Data>
+        <Data AD_Column_ID="58027" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="58028" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="58035" Column="AD_Language">es_MX</Data>
+        <Data AD_Column_ID="58033" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="58034" Column="AD_Browse_Field_ID">91066</Data>
+        <Data AD_Column_ID="58032" Column="CreatedBy">100</Data>
+      </PO>
+    </Step>
+  </Migration>
+</Migrations>
