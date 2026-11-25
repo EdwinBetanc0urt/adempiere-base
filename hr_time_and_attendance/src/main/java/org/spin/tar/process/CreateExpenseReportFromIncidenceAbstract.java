@@ -41,6 +41,8 @@ public abstract class CreateExpenseReportFromIncidenceAbstract extends SvrProces
 	public static final String DOCACTION = "DocAction";
 	/**	Parameter Name for Invoiced	*/
 	public static final String ISINVOICED = "IsInvoiced";
+	/**	Parameter Name for Preserve Incidence Detail	*/
+	public static final String ISPRESERVEINCIDENCEDETAIL = "IsPreserveIncidenceDetail";
 	/**	Parameter Value for Report Date	*/
 	private Timestamp dateReport;
 	/**	Parameter Value for Warehouse	*/
@@ -51,6 +53,8 @@ public abstract class CreateExpenseReportFromIncidenceAbstract extends SvrProces
 	private String docAction;
 	/**	Parameter Value for Invoiced	*/
 	private String isInvoiced;
+	/**	Parameter Value for Preserve Incidence Detail	*/
+	private String isPreserveIncidenceDetail;
 
 	@Override
 	protected void prepare() {
@@ -59,6 +63,7 @@ public abstract class CreateExpenseReportFromIncidenceAbstract extends SvrProces
 		priceListId = getParameterAsInt(M_PRICELIST_ID);
 		docAction = getParameterAsString(DOCACTION);
 		isInvoiced = getParameterAsString(ISINVOICED);
+		isPreserveIncidenceDetail = getParameterAsString(ISPRESERVEINCIDENCEDETAIL);
 	}
 
 	/**	 Getter Parameter Value for Report Date	*/
@@ -109,6 +114,16 @@ public abstract class CreateExpenseReportFromIncidenceAbstract extends SvrProces
 	/**	 Setter Parameter Value for Invoiced	*/
 	protected void setIsInvoiced(String isInvoiced) {
 		this.isInvoiced = isInvoiced;
+	}
+
+	/**	 Getter Parameter Value for Preserve Incidence Detail	*/
+	protected String getIsPreserveIncidenceDetail() {
+		return isPreserveIncidenceDetail;
+	}
+
+	/**	 Setter Parameter Value for Preserve Incidence Detail	*/
+	protected void setIsPreserveIncidenceDetail(String isPreserveIncidenceDetail) {
+		this.isPreserveIncidenceDetail = isPreserveIncidenceDetail;
 	}
 
 	/**	 Getter Parameter Value for Process ID	*/
