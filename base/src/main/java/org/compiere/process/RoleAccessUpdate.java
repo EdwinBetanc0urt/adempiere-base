@@ -26,7 +26,6 @@ import org.compiere.Adempiere;
 import org.compiere.model.MRole;
 import org.compiere.model.Query;
 import org.compiere.util.CLogMgt;
-import org.compiere.util.CacheMgt;
 import org.compiere.util.CLogger;
 import org.compiere.util.Env;
 import org.eevolution.services.dsl.ProcessBuilder;
@@ -48,6 +47,9 @@ import org.eevolution.services.dsl.ProcessBuilder;
 public class RoleAccessUpdate extends RoleAccessUpdateAbstract {
 
     private static CLogger logger = CLogger.getCLogger(RoleAccessUpdate.class);
+
+    /** Roles whose access records were updated, evicted from cache after commit */
+    private final List<Integer> updatedRoleIds = new ArrayList<>();
 
     /**
      * Read the parameters accepting any {@link Number} for the role, since
@@ -120,13 +122,16 @@ public class RoleAccessUpdate extends RoleAccessUpdateAbstract {
 
         addLog(0, null, null, role.getName() + ": "
                 + role.updateAccessRecords());
+        updatedRoleIds.add(role.getAD_Role_ID());
 
     }
 
     /**
-     * Runs after the commit: drop the cached roles (and their window, process,
-     * form, browse... access maps) so every session reloads the new access
-     * records instead of keeping the ones loaded before the update.
+     * Runs after the commit: evict the updated roles from the MRole cache
+     * (with their window, process, form, browse... access maps), so callers
+     * that read it without reload (e.g. gRPC) get the new access records.
+     * Sessions that already hold the role in their context (ZK) still need
+     * to log in again.
      */
     @Override
     protected void postProcess(boolean success) {
@@ -134,8 +139,8 @@ public class RoleAccessUpdate extends RoleAccessUpdateAbstract {
         if (!success) {
             return;
         }
-        int resetEntries = CacheMgt.get().reset(I_AD_Role.Table_Name);
-        getProcessLog().fine("Role cache reset: #" + resetEntries);
+        updatedRoleIds.forEach(MRole::removeFromCache);
+        getProcessLog().fine("Role cache evicted: #" + updatedRoleIds.size());
 
     }
 
