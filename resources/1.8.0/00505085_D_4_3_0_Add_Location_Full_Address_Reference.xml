@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <Migrations>
   <Migration EntityType="D" Name="Add_Location_Full_Address_Reference" ReleaseNo="4.3.0" SeqNo="505085">
-    <Comments>Add the view C_Location_v with the full address of a location (DisplayName), the Location reference displayed by it and the Location identifiers</Comments>
+    <Comments>Add the view RV_Location with the full address of a location (DisplayName), the Location reference displayed by it and the Location identifiers</Comments>
     <Step DBType="ALL" Parse="N" SeqNo="10" StepType="SQL">
-      <SQLStatement>CREATE OR REPLACE VIEW C_Location_v AS
+      <SQLStatement>CREATE OR REPLACE VIEW RV_Location AS
 -- Address (C_Location) with its full address to display (Address 1, Address 2, Postal City, Region; empty parts left out),
 -- the city and region resolved from C_City / C_Region and the columns to filter. SQL-99: PostgreSQL and Oracle.
 SELECT l.C_Location_ID,
@@ -34,7 +34,7 @@ SELECT l.C_Location_ID,
   LEFT JOIN C_City ci ON (ci.C_City_ID=l.C_City_ID)
   LEFT JOIN C_Region r ON (r.C_Region_ID=l.C_Region_ID)
   LEFT JOIN C_Country co ON (co.C_Country_ID=l.C_Country_ID)</SQLStatement>
-      <RollbackStatement>DROP VIEW C_Location_v</RollbackStatement>
+      <RollbackStatement>DROP VIEW RV_Location</RollbackStatement>
     </Step>
     <Step SeqNo="20" StepType="AD">
       <PO AD_Table_ID="276" Action="I" Record_ID="200565" Table="AD_Element">
@@ -95,7 +95,7 @@ SELECT l.C_Location_ID,
         <Data AD_Column_ID="543" Column="IsActive">true</Data>
         <Data AD_Column_ID="103" Column="Description">Addresses (C_Location) with the full address to display and the columns to filter</Data>
         <Data AD_Column_ID="50183" Column="CopyColumnsFromTable">N</Data>
-        <Data AD_Column_ID="107" Column="TableName">C_Location_v</Data>
+        <Data AD_Column_ID="107" Column="TableName">RV_Location</Data>
         <Data AD_Column_ID="354" Column="AccessLevel">7</Data>
         <Data AD_Column_ID="104" Column="Help">Used by the table reference C_Location (Full Address): the address is shown as Address 1, Address 2, Postal City, Region, leaving out the empty parts.</Data>
         <Data AD_Column_ID="9341" Column="ReplicationType">L</Data>
@@ -1565,7 +1565,7 @@ SELECT l.C_Location_ID,
         <Data AD_Column_ID="553" Column="IsActive">true</Data>
         <Data AD_Column_ID="554" Column="Created">2026-11-26 14:00:00.000</Data>
         <Data AD_Column_ID="139" Column="ValidationType">T</Data>
-        <Data AD_Column_ID="132" Column="Help">Shows the address of the view C_Location_v (column DisplayName): Address 1, Address 2, Postal City, Region, leaving out the empty parts.</Data>
+        <Data AD_Column_ID="132" Column="Help">Shows the address of the view RV_Location (column DisplayName): Address 1, Address 2, Postal City, Region, leaving out the empty parts.</Data>
         <Data AD_Column_ID="54355" Column="IsOrderByValue">false</Data>
         <Data AD_Column_ID="1180" Column="VFormat" isNewNull="true"/>
         <Data AD_Column_ID="130" Column="Name">C_Location (Full Address)</Data>
@@ -1582,7 +1582,7 @@ SELECT l.C_Location_ID,
     <Step SeqNo="241" StepType="AD">
       <PO AD_Table_ID="126" Action="I" Record_ID="0" Table="AD_Reference_Trl">
         <Data AD_Column_ID="280" Column="Name">Localización (Dirección completa)</Data>
-        <Data AD_Column_ID="282" Column="Help">Muestra la dirección de la vista C_Location_v (columna DisplayName): Dirección 1, Dirección 2, Código postal Ciudad, Región, omitiendo las partes vacías.</Data>
+        <Data AD_Column_ID="282" Column="Help">Muestra la dirección de la vista RV_Location (columna DisplayName): Dirección 1, Dirección 2, Código postal Ciudad, Región, omitiendo las partes vacías.</Data>
         <Data AD_Column_ID="666" Column="IsActive">true</Data>
         <Data AD_Column_ID="667" Column="Created">2026-11-26 14:00:00.000</Data>
         <Data AD_Column_ID="669" Column="Updated">2026-11-26 14:00:00.000</Data>
