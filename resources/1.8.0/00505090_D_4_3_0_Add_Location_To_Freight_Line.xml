@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <Migrations>
   <Migration EntityType="D" Name="Add_Location_To_Freight_Line" ReleaseNo="4.3.0" SeqNo="505090">
-    <Comments>Add delivery Latitude, Longitude and Location Accuracy to Freight Order Line</Comments>
+    <Comments>Add delivery Latitude, Longitude and Location Accuracy to Freight Order Line and show the full address of its locations</Comments>
     <Step SeqNo="10" StepType="AD">
       <PO AD_Table_ID="276" Action="I" Record_ID="200564" Table="AD_Element">
         <Data AD_Column_ID="2600" Column="Updated">2026-11-26 12:30:00.000</Data>
@@ -466,6 +466,16 @@
         <Data AD_Column_ID="675" Column="UpdatedBy">100</Data>
         <Data AD_Column_ID="285" Column="AD_Language">es_MX</Data>
         <Data AD_Column_ID="84323" Column="UUID">20574f94-cd8e-4cff-aba8-3c3a3179ec6a</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="100" StepType="AD">
+      <PO AD_Table_ID="101" Action="U" Record_ID="83761" Table="AD_Column">
+        <Data AD_Column_ID="227" Column="AD_Reference_Value_ID" oldValue="133">54939</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="110" StepType="AD">
+      <PO AD_Table_ID="101" Action="U" Record_ID="83760" Table="AD_Column">
+        <Data AD_Column_ID="227" Column="AD_Reference_Value_ID" oldValue="133">54939</Data>
       </PO>
     </Step>
   </Migration>
