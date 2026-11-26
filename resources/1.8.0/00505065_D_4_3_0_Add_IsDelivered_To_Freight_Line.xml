@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <Migrations>
-  <Migration EntityType="D" Name="Add_IsDelivered_To_Freight_Line" ReleaseNo="4.3.0" SeqNo="505060">
+  <Migration EntityType="D" Name="Add_IsDelivered_To_Freight_Line" ReleaseNo="4.3.0" SeqNo="505065">
     <Comments>Add IsDelivered to Freight Order Line</Comments>
     <Step SeqNo="10" StepType="AD">
       <PO AD_Table_ID="101" Action="I" Record_ID="211771" Table="AD_Column">
