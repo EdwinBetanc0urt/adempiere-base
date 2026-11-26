@@ -1,0 +1,482 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<Migrations>
+  <Migration EntityType="D" Name="Add_Location_To_Freight_Line" ReleaseNo="4.3.0" SeqNo="505090">
+    <Comments>Add delivery Latitude, Longitude and Location Accuracy to Freight Order Line and show the full address of its locations</Comments>
+    <Step SeqNo="10" StepType="AD">
+      <PO AD_Table_ID="276" Action="I" Record_ID="200564" Table="AD_Element">
+        <Data AD_Column_ID="2600" Column="Updated">2026-11-26 12:30:00.000</Data>
+        <Data AD_Column_ID="2597" Column="IsActive">true</Data>
+        <Data AD_Column_ID="2603" Column="Name">Location Accuracy</Data>
+        <Data AD_Column_ID="2604" Column="Description">Accuracy of the GPS position in meters</Data>
+        <Data AD_Column_ID="2598" Column="Created">2026-11-26 12:30:00.000</Data>
+        <Data AD_Column_ID="2602" Column="ColumnName">LocationAccuracy</Data>
+        <Data AD_Column_ID="2605" Column="Help">Radius in meters around the latitude and longitude where the real position is expected to be, as reported by the device. The lower the value, the more precise the position.</Data>
+        <Data AD_Column_ID="6284" Column="PO_Help" isNewNull="true"/>
+        <Data AD_Column_ID="6285" Column="PO_Name" isNewNull="true"/>
+        <Data AD_Column_ID="6283" Column="PO_Description" isNewNull="true"/>
+        <Data AD_Column_ID="4299" Column="PrintName">Location Accuracy</Data>
+        <Data AD_Column_ID="6286" Column="PO_PrintName" isNewNull="true"/>
+        <Data AD_Column_ID="58589" Column="FieldLength">22</Data>
+        <Data AD_Column_ID="58588" Column="AD_Reference_ID">22</Data>
+        <Data AD_Column_ID="2594" Column="AD_Element_ID">200564</Data>
+        <Data AD_Column_ID="2596" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="2595" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="6484" Column="EntityType">D</Data>
+        <Data AD_Column_ID="2599" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="58590" Column="AD_Reference_Value_ID" isNewNull="true"/>
+        <Data AD_Column_ID="2601" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="84316" Column="UUID">11cc7a45-8561-4463-aa84-360991b0ce75</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="11" StepType="AD">
+      <PO AD_Table_ID="277" Action="I" Record_ID="0" Table="AD_Element_Trl">
+        <Data AD_Column_ID="2642" Column="Created">2026-11-26 12:30:00.000</Data>
+        <Data AD_Column_ID="6449" Column="PO_Help" isNewNull="true"/>
+        <Data AD_Column_ID="2641" Column="IsActive">true</Data>
+        <Data AD_Column_ID="2644" Column="Updated">2026-11-26 12:30:00.000</Data>
+        <Data AD_Column_ID="2638" Column="AD_Language">es_MX</Data>
+        <Data AD_Column_ID="6450" Column="PO_Name" isNewNull="true"/>
+        <Data AD_Column_ID="2648" Column="Help">Radio en metros alrededor de la latitud y longitud donde se espera que esté la posición real, según lo informa el dispositivo. Mientras menor el valor, más precisa la posición.</Data>
+        <Data AD_Column_ID="2646" Column="Name">Precisión de Ubicación</Data>
+        <Data AD_Column_ID="2647" Column="Description">Precisión de la posición GPS en metros</Data>
+        <Data AD_Column_ID="2649" Column="IsTranslated">true</Data>
+        <Data AD_Column_ID="4300" Column="PrintName">Precisión de Ubicación</Data>
+        <Data AD_Column_ID="6448" Column="PO_Description" isNewNull="true"/>
+        <Data AD_Column_ID="6451" Column="PO_PrintName" isNewNull="true"/>
+        <Data AD_Column_ID="2640" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="2639" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="2645" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="2643" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="2637" Column="AD_Element_ID">200564</Data>
+        <Data AD_Column_ID="84317" Column="UUID">069a45ce-339b-4e9e-8c9c-96937fd6133b</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="20" StepType="AD">
+      <PO AD_Table_ID="101" Action="I" Record_ID="211773" Table="AD_Column">
+        <Data AD_Column_ID="50218" Column="MandatoryLogic" isNewNull="true"/>
+        <Data AD_Column_ID="110" Column="Version">0</Data>
+        <Data AD_Column_ID="13448" Column="ColumnSQL" isNewNull="true"/>
+        <Data AD_Column_ID="116" Column="ColumnName">Latitude</Data>
+        <Data AD_Column_ID="112" Column="Description">Latitude of the position where the line was delivered</Data>
+        <Data AD_Column_ID="548" Column="IsActive">true</Data>
+        <Data AD_Column_ID="90939" Column="AD_Image_ID" isNewNull="true"/>
+        <Data AD_Column_ID="549" Column="Created">2026-11-26 12:30:00.000</Data>
+        <Data AD_Column_ID="3388" Column="ValueMin" isNewNull="true"/>
+        <Data AD_Column_ID="551" Column="Updated">2026-11-26 12:30:00.000</Data>
+        <Data AD_Column_ID="3389" Column="ValueMax" isNewNull="true"/>
+        <Data AD_Column_ID="109" Column="AD_Column_ID">211773</Data>
+        <Data AD_Column_ID="126" Column="IsIdentifier">false</Data>
+        <Data AD_Column_ID="111" Column="Name">Latitude</Data>
+        <Data AD_Column_ID="124" Column="IsMandatory">false</Data>
+        <Data AD_Column_ID="125" Column="IsTranslated">false</Data>
+        <Data AD_Column_ID="117" Column="DefaultValue" isNewNull="true"/>
+        <Data AD_Column_ID="1179" Column="VFormat" isNewNull="true"/>
+        <Data AD_Column_ID="120" Column="IsParent">false</Data>
+        <Data AD_Column_ID="6244" Column="IsSelectionColumn">false</Data>
+        <Data AD_Column_ID="6483" Column="IsSyncDatabase">N</Data>
+        <Data AD_Column_ID="119" Column="IsKey">false</Data>
+        <Data AD_Column_ID="6245" Column="ReadOnlyLogic" isNewNull="true"/>
+        <Data AD_Column_ID="56352" Column="FormatPattern" isNewNull="true"/>
+        <Data AD_Column_ID="113" Column="Help">Geographic coordinate (north-south) captured by the device of the driver when confirming the delivery.</Data>
+        <Data AD_Column_ID="3360" Column="IsUpdateable">true</Data>
+        <Data AD_Column_ID="1692" Column="Callout" isNewNull="true"/>
+        <Data AD_Column_ID="11617" Column="IsAlwaysUpdateable">false</Data>
+        <Data AD_Column_ID="128" Column="IsEncrypted">N</Data>
+        <Data AD_Column_ID="54358" Column="InfoFactoryClass" isNewNull="true"/>
+        <Data AD_Column_ID="56187" Column="IsAllowLogging">true</Data>
+        <Data AD_Column_ID="56149" Column="IsAutocomplete">false</Data>
+        <Data AD_Column_ID="68024" Column="IsRange">false</Data>
+        <Data AD_Column_ID="62199" Column="IsAllowCopy">false</Data>
+        <Data AD_Column_ID="127" Column="SeqNo">0</Data>
+        <Data AD_Column_ID="6482" Column="EntityType">D</Data>
+        <Data AD_Column_ID="359" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="360" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="59702" Column="AD_Chart_ID" isNewNull="true"/>
+        <Data AD_Column_ID="114" Column="AD_Table_ID">54259</Data>
+        <Data AD_Column_ID="550" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="2608" Column="AD_Element_ID">62021</Data>
+        <Data AD_Column_ID="227" Column="AD_Reference_Value_ID" isNewNull="true"/>
+        <Data AD_Column_ID="115" Column="AD_Val_Rule_ID" isNewNull="true"/>
+        <Data AD_Column_ID="118" Column="FieldLength">22</Data>
+        <Data AD_Column_ID="226" Column="AD_Reference_ID">22</Data>
+        <Data AD_Column_ID="552" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="84306" Column="UUID">367075b8-c608-451f-9016-9d8e3fb035a3</Data>
+        <Data AD_Column_ID="3369" Column="AD_Process_ID" isNewNull="true"/>
+        <Data AD_Column_ID="92541" Column="RequiresSync">true</Data>
+        <Data AD_Column_ID="92542" Column="NameOldValue" isNewNull="true"/>
+      </PO>
+    </Step>
+    <Step SeqNo="21" StepType="AD">
+      <PO AD_Table_ID="752" Action="I" Record_ID="211773" Table="AD_Column_Trl">
+        <Data AD_Column_ID="12960" Column="Created">2026-11-26 12:30:00.000</Data>
+        <Data AD_Column_ID="12959" Column="IsActive">true</Data>
+        <Data AD_Column_ID="12952" Column="Updated">2026-11-26 12:30:00.000</Data>
+        <Data AD_Column_ID="12955" Column="AD_Column_ID">211773</Data>
+        <Data AD_Column_ID="12954" Column="IsTranslated">true</Data>
+        <Data AD_Column_ID="12957" Column="Name">Latitud</Data>
+        <Data AD_Column_ID="12961" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="12951" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="12958" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="12956" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="12953" Column="AD_Language">es_MX</Data>
+        <Data AD_Column_ID="84310" Column="UUID">256014a2-de7a-416f-ac5b-efea395eb738</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="22" StepType="AD">
+      <PO AD_Table_ID="107" Action="I" Record_ID="202753" Table="AD_Field">
+        <Data AD_Column_ID="168" Column="Name">Latitude</Data>
+        <Data AD_Column_ID="2007" Column="IsReadOnly">true</Data>
+        <Data AD_Column_ID="579" Column="Created">2026-11-26 12:30:00.000</Data>
+        <Data AD_Column_ID="78493" Column="IsQuickEntry">false</Data>
+        <Data AD_Column_ID="88877" Column="AD_FieldDefinition_ID" isNewNull="true"/>
+        <Data AD_Column_ID="581" Column="Updated">2026-11-26 12:30:00.000</Data>
+        <Data AD_Column_ID="88918" Column="AD_ContextInfo_ID" isNewNull="true"/>
+        <Data AD_Column_ID="578" Column="IsActive">true</Data>
+        <Data AD_Column_ID="90940" Column="AD_Image_ID" isNewNull="true"/>
+        <Data AD_Column_ID="59703" Column="IsEmbedded">false</Data>
+        <Data AD_Column_ID="74868" Column="IsAllowCopy">false</Data>
+        <Data AD_Column_ID="169" Column="Description">Latitude of the position where the line was delivered</Data>
+        <Data AD_Column_ID="176" Column="IsDisplayed">true</Data>
+        <Data AD_Column_ID="185" Column="IsFieldOnly">false</Data>
+        <Data AD_Column_ID="182" Column="SortNo" isNewNull="true"/>
+        <Data AD_Column_ID="2745" Column="IsCentrallyMaintained">true</Data>
+        <Data AD_Column_ID="170" Column="Help">Geographic coordinate (north-south) captured by the device of the driver when confirming the delivery.</Data>
+        <Data AD_Column_ID="54359" Column="InfoFactoryClass" isNewNull="true"/>
+        <Data AD_Column_ID="177" Column="DisplayLogic" isNewNull="true"/>
+        <Data AD_Column_ID="15011" Column="AD_Reference_ID" isNewNull="true"/>
+        <Data AD_Column_ID="15013" Column="IsMandatory" isNewNull="true"/>
+        <Data AD_Column_ID="59704" Column="PreferredWidth" isNewNull="true"/>
+        <Data AD_Column_ID="62478" Column="IsDisplayedGrid">true</Data>
+        <Data AD_Column_ID="183" Column="IsSameLine">false</Data>
+        <Data AD_Column_ID="184" Column="IsHeading">false</Data>
+        <Data AD_Column_ID="9969" Column="ObscureType" isNewNull="true"/>
+        <Data AD_Column_ID="53265" Column="DefaultValue" isNewNull="true"/>
+        <Data AD_Column_ID="57957" Column="Included_Tab_ID" isNewNull="true"/>
+        <Data AD_Column_ID="186" Column="IsEncrypted">false</Data>
+        <Data AD_Column_ID="384" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="383" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="167" Column="AD_Field_ID">202753</Data>
+        <Data AD_Column_ID="7714" Column="EntityType">D</Data>
+        <Data AD_Column_ID="582" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="580" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="181" Column="SeqNo">225</Data>
+        <Data AD_Column_ID="5375" Column="AD_FieldGroup_ID" isNewNull="true"/>
+        <Data AD_Column_ID="174" Column="AD_Column_ID">211773</Data>
+        <Data AD_Column_ID="54356" Column="AD_Reference_Value_ID" isNewNull="true"/>
+        <Data AD_Column_ID="62479" Column="SeqNoGrid">0</Data>
+        <Data AD_Column_ID="180" Column="DisplayLength">22</Data>
+        <Data AD_Column_ID="172" Column="AD_Tab_ID">54313</Data>
+        <Data AD_Column_ID="54357" Column="AD_Val_Rule_ID" isNewNull="true"/>
+        <Data AD_Column_ID="84320" Column="UUID">3dd37f8e-4c6b-44dc-9059-770c1d035283</Data>
+        <Data AD_Column_ID="101775" Column="AD_Window_ID">53519</Data>
+        <Data AD_Column_ID="105742" Column="DocBaseURL" isNewNull="true"/>
+      </PO>
+    </Step>
+    <Step SeqNo="23" StepType="AD">
+      <PO AD_Table_ID="127" Action="I" Record_ID="202753" Table="AD_Field_Trl">
+        <Data AD_Column_ID="671" Column="IsActive">true</Data>
+        <Data AD_Column_ID="672" Column="Created">2026-11-26 12:30:00.000</Data>
+        <Data AD_Column_ID="674" Column="Updated">2026-11-26 12:30:00.000</Data>
+        <Data AD_Column_ID="1205" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="287" Column="Description">Latitud de la posición donde se entregó la línea</Data>
+        <Data AD_Column_ID="289" Column="IsTranslated">true</Data>
+        <Data AD_Column_ID="286" Column="Name">Latitud</Data>
+        <Data AD_Column_ID="288" Column="Help">Coordenada geográfica (norte-sur) tomada por el dispositivo del chofer al confirmar la entrega.</Data>
+        <Data AD_Column_ID="1204" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="284" Column="AD_Field_ID">202753</Data>
+        <Data AD_Column_ID="673" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="675" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="285" Column="AD_Language">es_MX</Data>
+        <Data AD_Column_ID="84323" Column="UUID">66705f4e-0a16-4eb5-a9a0-48cf8b7cc395</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="30" StepType="AD">
+      <PO AD_Table_ID="101" Action="I" Record_ID="211774" Table="AD_Column">
+        <Data AD_Column_ID="50218" Column="MandatoryLogic" isNewNull="true"/>
+        <Data AD_Column_ID="110" Column="Version">0</Data>
+        <Data AD_Column_ID="13448" Column="ColumnSQL" isNewNull="true"/>
+        <Data AD_Column_ID="116" Column="ColumnName">Longitude</Data>
+        <Data AD_Column_ID="112" Column="Description">Longitude of the position where the line was delivered</Data>
+        <Data AD_Column_ID="548" Column="IsActive">true</Data>
+        <Data AD_Column_ID="90939" Column="AD_Image_ID" isNewNull="true"/>
+        <Data AD_Column_ID="549" Column="Created">2026-11-26 12:30:00.000</Data>
+        <Data AD_Column_ID="3388" Column="ValueMin" isNewNull="true"/>
+        <Data AD_Column_ID="551" Column="Updated">2026-11-26 12:30:00.000</Data>
+        <Data AD_Column_ID="3389" Column="ValueMax" isNewNull="true"/>
+        <Data AD_Column_ID="109" Column="AD_Column_ID">211774</Data>
+        <Data AD_Column_ID="126" Column="IsIdentifier">false</Data>
+        <Data AD_Column_ID="111" Column="Name">Longitude</Data>
+        <Data AD_Column_ID="124" Column="IsMandatory">false</Data>
+        <Data AD_Column_ID="125" Column="IsTranslated">false</Data>
+        <Data AD_Column_ID="117" Column="DefaultValue" isNewNull="true"/>
+        <Data AD_Column_ID="1179" Column="VFormat" isNewNull="true"/>
+        <Data AD_Column_ID="120" Column="IsParent">false</Data>
+        <Data AD_Column_ID="6244" Column="IsSelectionColumn">false</Data>
+        <Data AD_Column_ID="6483" Column="IsSyncDatabase">N</Data>
+        <Data AD_Column_ID="119" Column="IsKey">false</Data>
+        <Data AD_Column_ID="6245" Column="ReadOnlyLogic" isNewNull="true"/>
+        <Data AD_Column_ID="56352" Column="FormatPattern" isNewNull="true"/>
+        <Data AD_Column_ID="113" Column="Help">Geographic coordinate (east-west) captured by the device of the driver when confirming the delivery.</Data>
+        <Data AD_Column_ID="3360" Column="IsUpdateable">true</Data>
+        <Data AD_Column_ID="1692" Column="Callout" isNewNull="true"/>
+        <Data AD_Column_ID="11617" Column="IsAlwaysUpdateable">false</Data>
+        <Data AD_Column_ID="128" Column="IsEncrypted">N</Data>
+        <Data AD_Column_ID="54358" Column="InfoFactoryClass" isNewNull="true"/>
+        <Data AD_Column_ID="56187" Column="IsAllowLogging">true</Data>
+        <Data AD_Column_ID="56149" Column="IsAutocomplete">false</Data>
+        <Data AD_Column_ID="68024" Column="IsRange">false</Data>
+        <Data AD_Column_ID="62199" Column="IsAllowCopy">false</Data>
+        <Data AD_Column_ID="127" Column="SeqNo">0</Data>
+        <Data AD_Column_ID="6482" Column="EntityType">D</Data>
+        <Data AD_Column_ID="359" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="360" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="59702" Column="AD_Chart_ID" isNewNull="true"/>
+        <Data AD_Column_ID="114" Column="AD_Table_ID">54259</Data>
+        <Data AD_Column_ID="550" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="2608" Column="AD_Element_ID">62022</Data>
+        <Data AD_Column_ID="227" Column="AD_Reference_Value_ID" isNewNull="true"/>
+        <Data AD_Column_ID="115" Column="AD_Val_Rule_ID" isNewNull="true"/>
+        <Data AD_Column_ID="118" Column="FieldLength">22</Data>
+        <Data AD_Column_ID="226" Column="AD_Reference_ID">22</Data>
+        <Data AD_Column_ID="552" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="84306" Column="UUID">b588811e-b344-4881-94c7-21ccc43067a4</Data>
+        <Data AD_Column_ID="3369" Column="AD_Process_ID" isNewNull="true"/>
+        <Data AD_Column_ID="92541" Column="RequiresSync">true</Data>
+        <Data AD_Column_ID="92542" Column="NameOldValue" isNewNull="true"/>
+      </PO>
+    </Step>
+    <Step SeqNo="31" StepType="AD">
+      <PO AD_Table_ID="752" Action="I" Record_ID="211774" Table="AD_Column_Trl">
+        <Data AD_Column_ID="12960" Column="Created">2026-11-26 12:30:00.000</Data>
+        <Data AD_Column_ID="12959" Column="IsActive">true</Data>
+        <Data AD_Column_ID="12952" Column="Updated">2026-11-26 12:30:00.000</Data>
+        <Data AD_Column_ID="12955" Column="AD_Column_ID">211774</Data>
+        <Data AD_Column_ID="12954" Column="IsTranslated">true</Data>
+        <Data AD_Column_ID="12957" Column="Name">Longitud</Data>
+        <Data AD_Column_ID="12961" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="12951" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="12958" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="12956" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="12953" Column="AD_Language">es_MX</Data>
+        <Data AD_Column_ID="84310" Column="UUID">5aa0edf6-334f-4a32-ad52-a34c340a023c</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="32" StepType="AD">
+      <PO AD_Table_ID="107" Action="I" Record_ID="202754" Table="AD_Field">
+        <Data AD_Column_ID="168" Column="Name">Longitude</Data>
+        <Data AD_Column_ID="2007" Column="IsReadOnly">true</Data>
+        <Data AD_Column_ID="579" Column="Created">2026-11-26 12:30:00.000</Data>
+        <Data AD_Column_ID="78493" Column="IsQuickEntry">false</Data>
+        <Data AD_Column_ID="88877" Column="AD_FieldDefinition_ID" isNewNull="true"/>
+        <Data AD_Column_ID="581" Column="Updated">2026-11-26 12:30:00.000</Data>
+        <Data AD_Column_ID="88918" Column="AD_ContextInfo_ID" isNewNull="true"/>
+        <Data AD_Column_ID="578" Column="IsActive">true</Data>
+        <Data AD_Column_ID="90940" Column="AD_Image_ID" isNewNull="true"/>
+        <Data AD_Column_ID="59703" Column="IsEmbedded">false</Data>
+        <Data AD_Column_ID="74868" Column="IsAllowCopy">false</Data>
+        <Data AD_Column_ID="169" Column="Description">Longitude of the position where the line was delivered</Data>
+        <Data AD_Column_ID="176" Column="IsDisplayed">true</Data>
+        <Data AD_Column_ID="185" Column="IsFieldOnly">false</Data>
+        <Data AD_Column_ID="182" Column="SortNo" isNewNull="true"/>
+        <Data AD_Column_ID="2745" Column="IsCentrallyMaintained">true</Data>
+        <Data AD_Column_ID="170" Column="Help">Geographic coordinate (east-west) captured by the device of the driver when confirming the delivery.</Data>
+        <Data AD_Column_ID="54359" Column="InfoFactoryClass" isNewNull="true"/>
+        <Data AD_Column_ID="177" Column="DisplayLogic" isNewNull="true"/>
+        <Data AD_Column_ID="15011" Column="AD_Reference_ID" isNewNull="true"/>
+        <Data AD_Column_ID="15013" Column="IsMandatory" isNewNull="true"/>
+        <Data AD_Column_ID="59704" Column="PreferredWidth" isNewNull="true"/>
+        <Data AD_Column_ID="62478" Column="IsDisplayedGrid">true</Data>
+        <Data AD_Column_ID="183" Column="IsSameLine">true</Data>
+        <Data AD_Column_ID="184" Column="IsHeading">false</Data>
+        <Data AD_Column_ID="9969" Column="ObscureType" isNewNull="true"/>
+        <Data AD_Column_ID="53265" Column="DefaultValue" isNewNull="true"/>
+        <Data AD_Column_ID="57957" Column="Included_Tab_ID" isNewNull="true"/>
+        <Data AD_Column_ID="186" Column="IsEncrypted">false</Data>
+        <Data AD_Column_ID="384" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="383" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="167" Column="AD_Field_ID">202754</Data>
+        <Data AD_Column_ID="7714" Column="EntityType">D</Data>
+        <Data AD_Column_ID="582" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="580" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="181" Column="SeqNo">235</Data>
+        <Data AD_Column_ID="5375" Column="AD_FieldGroup_ID" isNewNull="true"/>
+        <Data AD_Column_ID="174" Column="AD_Column_ID">211774</Data>
+        <Data AD_Column_ID="54356" Column="AD_Reference_Value_ID" isNewNull="true"/>
+        <Data AD_Column_ID="62479" Column="SeqNoGrid">0</Data>
+        <Data AD_Column_ID="180" Column="DisplayLength">22</Data>
+        <Data AD_Column_ID="172" Column="AD_Tab_ID">54313</Data>
+        <Data AD_Column_ID="54357" Column="AD_Val_Rule_ID" isNewNull="true"/>
+        <Data AD_Column_ID="84320" Column="UUID">f86bf9c5-2a73-472c-bc65-718483669008</Data>
+        <Data AD_Column_ID="101775" Column="AD_Window_ID">53519</Data>
+        <Data AD_Column_ID="105742" Column="DocBaseURL" isNewNull="true"/>
+      </PO>
+    </Step>
+    <Step SeqNo="33" StepType="AD">
+      <PO AD_Table_ID="127" Action="I" Record_ID="202754" Table="AD_Field_Trl">
+        <Data AD_Column_ID="671" Column="IsActive">true</Data>
+        <Data AD_Column_ID="672" Column="Created">2026-11-26 12:30:00.000</Data>
+        <Data AD_Column_ID="674" Column="Updated">2026-11-26 12:30:00.000</Data>
+        <Data AD_Column_ID="1205" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="287" Column="Description">Longitud de la posición donde se entregó la línea</Data>
+        <Data AD_Column_ID="289" Column="IsTranslated">true</Data>
+        <Data AD_Column_ID="286" Column="Name">Longitud</Data>
+        <Data AD_Column_ID="288" Column="Help">Coordenada geográfica (este-oeste) tomada por el dispositivo del chofer al confirmar la entrega.</Data>
+        <Data AD_Column_ID="1204" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="284" Column="AD_Field_ID">202754</Data>
+        <Data AD_Column_ID="673" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="675" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="285" Column="AD_Language">es_MX</Data>
+        <Data AD_Column_ID="84323" Column="UUID">e99c179d-0adf-48b2-a1b5-a19214599e50</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="40" StepType="AD">
+      <PO AD_Table_ID="101" Action="I" Record_ID="211775" Table="AD_Column">
+        <Data AD_Column_ID="50218" Column="MandatoryLogic" isNewNull="true"/>
+        <Data AD_Column_ID="110" Column="Version">0</Data>
+        <Data AD_Column_ID="13448" Column="ColumnSQL" isNewNull="true"/>
+        <Data AD_Column_ID="116" Column="ColumnName">LocationAccuracy</Data>
+        <Data AD_Column_ID="112" Column="Description">Accuracy of the GPS position in meters</Data>
+        <Data AD_Column_ID="548" Column="IsActive">true</Data>
+        <Data AD_Column_ID="90939" Column="AD_Image_ID" isNewNull="true"/>
+        <Data AD_Column_ID="549" Column="Created">2026-11-26 12:30:00.000</Data>
+        <Data AD_Column_ID="3388" Column="ValueMin" isNewNull="true"/>
+        <Data AD_Column_ID="551" Column="Updated">2026-11-26 12:30:00.000</Data>
+        <Data AD_Column_ID="3389" Column="ValueMax" isNewNull="true"/>
+        <Data AD_Column_ID="109" Column="AD_Column_ID">211775</Data>
+        <Data AD_Column_ID="126" Column="IsIdentifier">false</Data>
+        <Data AD_Column_ID="111" Column="Name">Location Accuracy</Data>
+        <Data AD_Column_ID="124" Column="IsMandatory">false</Data>
+        <Data AD_Column_ID="125" Column="IsTranslated">false</Data>
+        <Data AD_Column_ID="117" Column="DefaultValue" isNewNull="true"/>
+        <Data AD_Column_ID="1179" Column="VFormat" isNewNull="true"/>
+        <Data AD_Column_ID="120" Column="IsParent">false</Data>
+        <Data AD_Column_ID="6244" Column="IsSelectionColumn">false</Data>
+        <Data AD_Column_ID="6483" Column="IsSyncDatabase">N</Data>
+        <Data AD_Column_ID="119" Column="IsKey">false</Data>
+        <Data AD_Column_ID="6245" Column="ReadOnlyLogic" isNewNull="true"/>
+        <Data AD_Column_ID="56352" Column="FormatPattern" isNewNull="true"/>
+        <Data AD_Column_ID="113" Column="Help">Radius in meters around the latitude and longitude where the real position is expected to be, as reported by the device. The lower the value, the more precise the position.</Data>
+        <Data AD_Column_ID="3360" Column="IsUpdateable">true</Data>
+        <Data AD_Column_ID="1692" Column="Callout" isNewNull="true"/>
+        <Data AD_Column_ID="11617" Column="IsAlwaysUpdateable">false</Data>
+        <Data AD_Column_ID="128" Column="IsEncrypted">N</Data>
+        <Data AD_Column_ID="54358" Column="InfoFactoryClass" isNewNull="true"/>
+        <Data AD_Column_ID="56187" Column="IsAllowLogging">true</Data>
+        <Data AD_Column_ID="56149" Column="IsAutocomplete">false</Data>
+        <Data AD_Column_ID="68024" Column="IsRange">false</Data>
+        <Data AD_Column_ID="62199" Column="IsAllowCopy">false</Data>
+        <Data AD_Column_ID="127" Column="SeqNo">0</Data>
+        <Data AD_Column_ID="6482" Column="EntityType">D</Data>
+        <Data AD_Column_ID="359" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="360" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="59702" Column="AD_Chart_ID" isNewNull="true"/>
+        <Data AD_Column_ID="114" Column="AD_Table_ID">54259</Data>
+        <Data AD_Column_ID="550" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="2608" Column="AD_Element_ID">200564</Data>
+        <Data AD_Column_ID="227" Column="AD_Reference_Value_ID" isNewNull="true"/>
+        <Data AD_Column_ID="115" Column="AD_Val_Rule_ID" isNewNull="true"/>
+        <Data AD_Column_ID="118" Column="FieldLength">22</Data>
+        <Data AD_Column_ID="226" Column="AD_Reference_ID">22</Data>
+        <Data AD_Column_ID="552" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="84306" Column="UUID">fcd80e83-7f1b-4fc9-ab85-ec18824adb62</Data>
+        <Data AD_Column_ID="3369" Column="AD_Process_ID" isNewNull="true"/>
+        <Data AD_Column_ID="92541" Column="RequiresSync">true</Data>
+        <Data AD_Column_ID="92542" Column="NameOldValue" isNewNull="true"/>
+      </PO>
+    </Step>
+    <Step SeqNo="41" StepType="AD">
+      <PO AD_Table_ID="752" Action="I" Record_ID="211775" Table="AD_Column_Trl">
+        <Data AD_Column_ID="12960" Column="Created">2026-11-26 12:30:00.000</Data>
+        <Data AD_Column_ID="12959" Column="IsActive">true</Data>
+        <Data AD_Column_ID="12952" Column="Updated">2026-11-26 12:30:00.000</Data>
+        <Data AD_Column_ID="12955" Column="AD_Column_ID">211775</Data>
+        <Data AD_Column_ID="12954" Column="IsTranslated">true</Data>
+        <Data AD_Column_ID="12957" Column="Name">Precisión de Ubicación</Data>
+        <Data AD_Column_ID="12961" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="12951" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="12958" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="12956" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="12953" Column="AD_Language">es_MX</Data>
+        <Data AD_Column_ID="84310" Column="UUID">b5323c40-ae2a-428b-b918-09f0ee3bfa68</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="42" StepType="AD">
+      <PO AD_Table_ID="107" Action="I" Record_ID="202755" Table="AD_Field">
+        <Data AD_Column_ID="168" Column="Name">Location Accuracy</Data>
+        <Data AD_Column_ID="2007" Column="IsReadOnly">true</Data>
+        <Data AD_Column_ID="579" Column="Created">2026-11-26 12:30:00.000</Data>
+        <Data AD_Column_ID="78493" Column="IsQuickEntry">false</Data>
+        <Data AD_Column_ID="88877" Column="AD_FieldDefinition_ID" isNewNull="true"/>
+        <Data AD_Column_ID="581" Column="Updated">2026-11-26 12:30:00.000</Data>
+        <Data AD_Column_ID="88918" Column="AD_ContextInfo_ID" isNewNull="true"/>
+        <Data AD_Column_ID="578" Column="IsActive">true</Data>
+        <Data AD_Column_ID="90940" Column="AD_Image_ID" isNewNull="true"/>
+        <Data AD_Column_ID="59703" Column="IsEmbedded">false</Data>
+        <Data AD_Column_ID="74868" Column="IsAllowCopy">false</Data>
+        <Data AD_Column_ID="169" Column="Description">Accuracy of the GPS position in meters</Data>
+        <Data AD_Column_ID="176" Column="IsDisplayed">true</Data>
+        <Data AD_Column_ID="185" Column="IsFieldOnly">false</Data>
+        <Data AD_Column_ID="182" Column="SortNo" isNewNull="true"/>
+        <Data AD_Column_ID="2745" Column="IsCentrallyMaintained">true</Data>
+        <Data AD_Column_ID="170" Column="Help">Radius in meters around the latitude and longitude where the real position is expected to be, as reported by the device. The lower the value, the more precise the position.</Data>
+        <Data AD_Column_ID="54359" Column="InfoFactoryClass" isNewNull="true"/>
+        <Data AD_Column_ID="177" Column="DisplayLogic" isNewNull="true"/>
+        <Data AD_Column_ID="15011" Column="AD_Reference_ID" isNewNull="true"/>
+        <Data AD_Column_ID="15013" Column="IsMandatory" isNewNull="true"/>
+        <Data AD_Column_ID="59704" Column="PreferredWidth" isNewNull="true"/>
+        <Data AD_Column_ID="62478" Column="IsDisplayedGrid">true</Data>
+        <Data AD_Column_ID="183" Column="IsSameLine">false</Data>
+        <Data AD_Column_ID="184" Column="IsHeading">false</Data>
+        <Data AD_Column_ID="9969" Column="ObscureType" isNewNull="true"/>
+        <Data AD_Column_ID="53265" Column="DefaultValue" isNewNull="true"/>
+        <Data AD_Column_ID="57957" Column="Included_Tab_ID" isNewNull="true"/>
+        <Data AD_Column_ID="186" Column="IsEncrypted">false</Data>
+        <Data AD_Column_ID="384" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="383" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="167" Column="AD_Field_ID">202755</Data>
+        <Data AD_Column_ID="7714" Column="EntityType">D</Data>
+        <Data AD_Column_ID="582" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="580" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="181" Column="SeqNo">245</Data>
+        <Data AD_Column_ID="5375" Column="AD_FieldGroup_ID" isNewNull="true"/>
+        <Data AD_Column_ID="174" Column="AD_Column_ID">211775</Data>
+        <Data AD_Column_ID="54356" Column="AD_Reference_Value_ID" isNewNull="true"/>
+        <Data AD_Column_ID="62479" Column="SeqNoGrid">0</Data>
+        <Data AD_Column_ID="180" Column="DisplayLength">22</Data>
+        <Data AD_Column_ID="172" Column="AD_Tab_ID">54313</Data>
+        <Data AD_Column_ID="54357" Column="AD_Val_Rule_ID" isNewNull="true"/>
+        <Data AD_Column_ID="84320" Column="UUID">9c19f53b-0d3f-4f4a-9165-f78b4db4446e</Data>
+        <Data AD_Column_ID="101775" Column="AD_Window_ID">53519</Data>
+        <Data AD_Column_ID="105742" Column="DocBaseURL" isNewNull="true"/>
+      </PO>
+    </Step>
+    <Step SeqNo="43" StepType="AD">
+      <PO AD_Table_ID="127" Action="I" Record_ID="202755" Table="AD_Field_Trl">
+        <Data AD_Column_ID="671" Column="IsActive">true</Data>
+        <Data AD_Column_ID="672" Column="Created">2026-11-26 12:30:00.000</Data>
+        <Data AD_Column_ID="674" Column="Updated">2026-11-26 12:30:00.000</Data>
+        <Data AD_Column_ID="1205" Column="AD_Org_ID">0</Data>
+        <Data AD_Column_ID="287" Column="Description">Precisión de la posición GPS en metros</Data>
+        <Data AD_Column_ID="289" Column="IsTranslated">true</Data>
+        <Data AD_Column_ID="286" Column="Name">Precisión de Ubicación</Data>
+        <Data AD_Column_ID="288" Column="Help">Radio en metros alrededor de la latitud y longitud donde se espera que esté la posición real, según lo informa el dispositivo. Mientras menor el valor, más precisa la posición.</Data>
+        <Data AD_Column_ID="1204" Column="AD_Client_ID">0</Data>
+        <Data AD_Column_ID="284" Column="AD_Field_ID">202755</Data>
+        <Data AD_Column_ID="673" Column="CreatedBy">100</Data>
+        <Data AD_Column_ID="675" Column="UpdatedBy">100</Data>
+        <Data AD_Column_ID="285" Column="AD_Language">es_MX</Data>
+        <Data AD_Column_ID="84323" Column="UUID">20574f94-cd8e-4cff-aba8-3c3a3179ec6a</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="100" StepType="AD">
+      <PO AD_Table_ID="101" Action="U" Record_ID="83761" Table="AD_Column">
+        <Data AD_Column_ID="227" Column="AD_Reference_Value_ID" oldValue="133">54939</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="110" StepType="AD">
+      <PO AD_Table_ID="101" Action="U" Record_ID="83760" Table="AD_Column">
+        <Data AD_Column_ID="227" Column="AD_Reference_Value_ID" oldValue="133">54939</Data>
+      </PO>
+    </Step>
+  </Migration>
+</Migrations>

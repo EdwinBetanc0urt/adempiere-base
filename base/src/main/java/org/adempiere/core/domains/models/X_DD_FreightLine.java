@@ -339,6 +339,26 @@ public class X_DD_FreightLine extends PO implements I_DD_FreightLine, I_Persiste
 		return false;
 	}
 
+	/** Set Latitude.
+		@param Latitude 
+		Latitude is a geographic coordinate that specifies the north-south position of a point on the Earth's surface.
+	  */
+	public void setLatitude (BigDecimal Latitude)
+	{
+		set_Value (COLUMNNAME_Latitude, Latitude);
+	}
+
+	/** Get Latitude.
+		@return Latitude is a geographic coordinate that specifies the north-south position of a point on the Earth's surface.
+	  */
+	public BigDecimal getLatitude () 
+	{
+		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_Latitude);
+		if (bd == null)
+			 return Env.ZERO;
+		return bd;
+	}
+
 	/** Set Line No.
 		@param Line 
 		Unique line for this document
@@ -357,6 +377,46 @@ public class X_DD_FreightLine extends PO implements I_DD_FreightLine, I_Persiste
 		if (ii == null)
 			 return 0;
 		return ii.intValue();
+	}
+
+	/** Set Location Accuracy.
+		@param LocationAccuracy 
+		Accuracy of the GPS position in meters
+	  */
+	public void setLocationAccuracy (BigDecimal LocationAccuracy)
+	{
+		set_Value (COLUMNNAME_LocationAccuracy, LocationAccuracy);
+	}
+
+	/** Get Location Accuracy.
+		@return Accuracy of the GPS position in meters
+	  */
+	public BigDecimal getLocationAccuracy () 
+	{
+		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_LocationAccuracy);
+		if (bd == null)
+			 return Env.ZERO;
+		return bd;
+	}
+
+	/** Set Longitude.
+		@param Longitude 
+		Longitude is a geographic coordinate that specifies the east-west position of a point on the Earth's surface.
+	  */
+	public void setLongitude (BigDecimal Longitude)
+	{
+		set_Value (COLUMNNAME_Longitude, Longitude);
+	}
+
+	/** Get Longitude.
+		@return Longitude is a geographic coordinate that specifies the east-west position of a point on the Earth's surface.
+	  */
+	public BigDecimal getLongitude () 
+	{
+		BigDecimal bd = (BigDecimal)get_Value(COLUMNNAME_Longitude);
+		if (bd == null)
+			 return Env.ZERO;
+		return bd;
 	}
 
 	public org.adempiere.core.domains.models.I_M_Freight getM_Freight() throws RuntimeException
