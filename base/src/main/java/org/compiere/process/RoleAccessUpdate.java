@@ -26,6 +26,7 @@ import org.compiere.Adempiere;
 import org.compiere.model.MRole;
 import org.compiere.model.Query;
 import org.compiere.util.CLogMgt;
+import org.compiere.util.CacheMgt;
 import org.compiere.util.CLogger;
 import org.compiere.util.Env;
 import org.eevolution.services.dsl.ProcessBuilder;
@@ -48,6 +49,22 @@ public class RoleAccessUpdate extends RoleAccessUpdateAbstract {
 
     private static CLogger logger = CLogger.getCLogger(RoleAccessUpdate.class);
 
+    /**
+     * Read the parameters accepting any {@link Number} for the role, since
+     * callers like {@link ProcessBuilder} (gRPC, migrations) may pass an
+     * Integer instead of the BigDecimal stored in AD_PInstance_Para.
+     */
+    @Override
+    protected void prepare() {
+
+        setClientId(getParameterAsInt(AD_CLIENT_ID));
+        Object roleParameter = getParameter(AD_ROLE_ID);
+        if (roleParameter instanceof Number) {
+            setRoleId(((Number) roleParameter).intValue());
+        }
+
+    }
+
     protected String doIt() throws Exception {
 
         getProcessLog().info("AD_Client_ID=" + getClientId() + ", AD_Role_ID="
@@ -65,16 +82,17 @@ public class RoleAccessUpdate extends RoleAccessUpdateAbstract {
         List<Object> params = new ArrayList<>();
         String whereClause = "";
 
-        if (getClientId() > 0) {
+        if (clientId > 0) {
             whereClause = "AD_Client_ID=?";
-            params.add(getClientId());
+            params.add(clientId);
         }
-        
-        if (getRoleId() >= 0) { 
-            if (!whereClause.isEmpty())
+
+        if (roleId >= 0) {
+            if (!whereClause.isEmpty()) {
                 whereClause += " AND ";
+            }
             whereClause += "AD_Role_ID=?";
-            params.add(getRoleId());
+            params.add(roleId);
         }
 
         return getRoleQuery(whereClause)
@@ -102,6 +120,22 @@ public class RoleAccessUpdate extends RoleAccessUpdateAbstract {
 
         addLog(0, null, null, role.getName() + ": "
                 + role.updateAccessRecords());
+
+    }
+
+    /**
+     * Runs after the commit: drop the cached roles (and their window, process,
+     * form, browse... access maps) so every session reloads the new access
+     * records instead of keeping the ones loaded before the update.
+     */
+    @Override
+    protected void postProcess(boolean success) {
+
+        if (!success) {
+            return;
+        }
+        int resetEntries = CacheMgt.get().reset(I_AD_Role.Table_Name);
+        getProcessLog().fine("Role cache reset: #" + resetEntries);
 
     }
 

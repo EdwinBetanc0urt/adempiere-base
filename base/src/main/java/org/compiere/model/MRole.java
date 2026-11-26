@@ -531,7 +531,7 @@ public final class MRole extends X_AD_Role
 			+ ", AD_Workflow_ID=" + wfDel + "+" + wf
 			+ ", AD_Document_Action_Access=" + docactDel + "+" + docact
 			+ ", PA_DashboardContent_ID=" + dashboardDel + "+" + dashboard
-			+ ", ASP_Level_ID=" + aSPLevel + "+" + aSPLevelDel
+			+ ", ASP_Level_ID=" + aSPLevelDel + "+" + aSPLevel
 			);
 		
 		loadAccess(true);
