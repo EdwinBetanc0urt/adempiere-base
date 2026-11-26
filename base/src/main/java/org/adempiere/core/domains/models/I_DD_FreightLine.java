@@ -234,6 +234,19 @@ public interface I_DD_FreightLine
 	  */
 	public boolean isInvoiced();
 
+    /** Column name Latitude */
+    public static final String COLUMNNAME_Latitude = "Latitude";
+
+	/** Set Latitude.
+	  * Latitude is a geographic coordinate that specifies the north-south position of a point on the Earth's surface.
+	  */
+	public void setLatitude (BigDecimal Latitude);
+
+	/** Get Latitude.
+	  * Latitude is a geographic coordinate that specifies the north-south position of a point on the Earth's surface.
+	  */
+	public BigDecimal getLatitude();
+
     /** Column name Line */
     public static final String COLUMNNAME_Line = "Line";
 
@@ -246,6 +259,32 @@ public interface I_DD_FreightLine
 	  * Unique line for this document
 	  */
 	public int getLine();
+
+    /** Column name LocationAccuracy */
+    public static final String COLUMNNAME_LocationAccuracy = "LocationAccuracy";
+
+	/** Set Location Accuracy.
+	  * Accuracy of the GPS position in meters
+	  */
+	public void setLocationAccuracy (BigDecimal LocationAccuracy);
+
+	/** Get Location Accuracy.
+	  * Accuracy of the GPS position in meters
+	  */
+	public BigDecimal getLocationAccuracy();
+
+    /** Column name Longitude */
+    public static final String COLUMNNAME_Longitude = "Longitude";
+
+	/** Set Longitude.
+	  * Longitude is a geographic coordinate that specifies the east-west position of a point on the Earth's surface.
+	  */
+	public void setLongitude (BigDecimal Longitude);
+
+	/** Get Longitude.
+	  * Longitude is a geographic coordinate that specifies the east-west position of a point on the Earth's surface.
+	  */
+	public BigDecimal getLongitude();
 
     /** Column name M_Freight_ID */
     public static final String COLUMNNAME_M_Freight_ID = "M_Freight_ID";
