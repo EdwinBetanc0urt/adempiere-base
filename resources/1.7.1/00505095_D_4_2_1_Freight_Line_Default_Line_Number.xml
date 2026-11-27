@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<Migrations>
+  <Migration EntityType="D" Name="Freight_Line_Default_Line_Number" ReleaseNo="4.2.1" SeqNo="505095">
+    <Comments>Default the Freight Order Line number to the next line of the order</Comments>
+    <Step SeqNo="10" StepType="AD">
+      <PO AD_Table_ID="101" Action="U" Record_ID="83750" Table="AD_Column">
+        <Data AD_Column_ID="117" Column="DefaultValue" isOldNull="true">@SQL=SELECT COALESCE(MAX(Line),0)+10 AS DefaultValue FROM DD_FreightLine WHERE DD_Freight_ID=@DD_Freight_ID@</Data>
+      </PO>
+    </Step>
+  </Migration>
+</Migrations>
