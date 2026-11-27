@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<Migrations>
+  <Migration EntityType="D" Name="Location_Full_Address_Reference_Zoom_Window" ReleaseNo="4.3.0" SeqNo="505100">
+    <Comments>Set the Location window as zoom window of the full address Location reference and the RV_Location view</Comments>
+    <Step SeqNo="10" StepType="AD">
+      <PO AD_Table_ID="103" Action="U" Record_ID="54939" Table="AD_Ref_Table">
+        <Data AD_Column_ID="57270" Column="AD_Window_ID" isOldNull="true">121</Data>
+      </PO>
+    </Step>
+    <Step SeqNo="20" StepType="AD">
+      <PO AD_Table_ID="100" Action="U" Record_ID="200176" Table="AD_Table">
+        <Data AD_Column_ID="105" Column="AD_Window_ID" isOldNull="true">121</Data>
+      </PO>
+    </Step>
+  </Migration>
+</Migrations>
