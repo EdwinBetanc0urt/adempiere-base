@@ -22,6 +22,7 @@ import java.sql.ResultSet;
 import java.util.Properties;
 
 import org.adempiere.core.domains.models.X_DD_FreightLine;
+import org.compiere.util.DB;
 
 /**
  * Domain Model for Freight Line Order
@@ -67,6 +68,18 @@ public class MDDFreightLine extends X_DD_FreightLine {
 		}
 		return parent;
 	}	//	getParent
+
+	@Override
+	protected boolean beforeSave(boolean newRecord) {
+		//	Get Line No
+		if (getLine() == 0) {
+			String sql = "SELECT COALESCE(MAX(" + COLUMNNAME_Line + "),0)+10 FROM " + Table_Name
+				+ " WHERE " + COLUMNNAME_DD_Freight_ID + "=?";
+			int lineNo = DB.getSQLValue(get_TrxName(), sql, getDD_Freight_ID());
+			setLine(lineNo);
+		}
+		return true;
+	}
 
 	@Override
 	public String toString() {
