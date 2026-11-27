@@ -46,6 +46,27 @@ public class CreateFreightOrderFromPackage extends CreateFreightOrderFromPackage
 		}
 	}
 	
+	/**
+	 * Get the freight category for a package line:
+	 * the process parameter when overwriting (it is only shown when the rule is not Line),
+	 * else the package category, else the category of the package freight.
+	 * @param selectedPackage
+	 * @return freight category, or 0 when not found
+	 */
+	private int getFreightCategoryId(MPackage selectedPackage) {
+		if(isOverwriteFreightCostRule() && getFreightCategoryId() > 0) {
+			return getFreightCategoryId();
+		}
+		if(selectedPackage.getM_FreightCategory_ID() > 0) {
+			return selectedPackage.getM_FreightCategory_ID();
+		}
+		if(selectedPackage.getM_Freight_ID() > 0) {
+			MFreight freight = new MFreight(getCtx(), selectedPackage.getM_Freight_ID(), get_TrxName());
+			return freight.getM_FreightCategory_ID();
+		}
+		return 0;
+	}
+	
 	@Override
 	protected String doIt() throws Exception {
 		MDDFreight freightOrder = new MDDFreight(getCtx(), 0, get_TrxName());
@@ -94,14 +115,6 @@ public class CreateFreightOrderFromPackage extends CreateFreightOrderFromPackage
 			if(selectedPackage.getM_Freight_ID() > 0) {
 				freightLine.setM_Freight_ID(selectedPackage.getM_Freight_ID());
 			}
-			//	
-			if(isOverwriteFreightCostRule()) {
-				freightLine.setM_FreightCategory_ID(getFreightCategoryId());
-				MFreight freight = new MFreight(getCtx(), getFreightCategoryId(), get_TrxName());
-				freightLine.setM_FreightCategory_ID(freight.getM_FreightCategory_ID());
-			} else {
-				freightLine.setM_FreightCategory_ID(selectedPackage.getM_FreightCategory_ID());
-			}
 			//	Set from client
 			MClientInfo clientInfo = MClientInfo.get(getCtx());
 			//	Weight
@@ -120,17 +133,13 @@ public class CreateFreightOrderFromPackage extends CreateFreightOrderFromPackage
 				freightLine.setC_BPartner_ID(selectedPackage.getC_BPartner_ID());
 			}
 			freightLine.setIsInvoiced(selectedPackage.isInvoiced());
-			if(isOverwriteFreightCostRule()) {
-				if(getFreightCategoryId() > 0) {
-					freightLine.setM_FreightCategory_ID(getFreightCategoryId());
-				}
-			} else {
-				if(selectedPackage.getM_FreightCategory_ID() <= 0) {
-					throw new AdempiereException("@M_FreightCategory_ID@ @NotFound@");
-				}
-				freightLine.setM_FreightCategory_ID(selectedPackage.getM_FreightCategory_ID());
+			//	Freight Category
+			int freightCategoryId = getFreightCategoryId(selectedPackage);
+			freightLine.setM_FreightCategory_ID(freightCategoryId);
+			MFreightCategory freightCategory = MFreightCategory.getById(getCtx(), freightCategoryId, get_TrxName());
+			if(freightCategory == null) {
+				throw new AdempiereException("@M_FreightCategory_ID@ @NotFound@ (@M_Package_ID@: " + selectedPackage.getDocumentNo() + ")");
 			}
-			MFreightCategory freightCategory = MFreightCategory.getById(getCtx(), freightLine.getM_FreightCategory_ID(), get_TrxName());
 			if(selectedPackage.isInvoiced()) {
 				if(freightCategory.getM_Product_ID() <= 0
 						&& freightCategory.getC_Charge_ID() <= 0) {
