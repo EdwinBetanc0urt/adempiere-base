@@ -228,11 +228,19 @@ public class MDDFreight extends X_DD_Freight implements DocAction, DocOptions {
                 log.fine("Driver without business partner, notification skipped: " + driver.getName());
                 return;
             }
-            int[] userIds = new Query(getCtx(), I_AD_User.Table_Name,
-                    I_AD_User.COLUMNNAME_C_BPartner_ID + "=? AND " + I_AD_User.COLUMNNAME_AD_Client_ID + "=?", get_TrxName())
-                    .setParameters(driver.getC_BPartner_ID(), getAD_Client_ID())
-                    .setOnlyActiveRecords(true)
-                    .getIDs();
+            int[] userIds = new Query(
+                getCtx(),
+                I_AD_User.Table_Name,
+                I_AD_User.COLUMNNAME_C_BPartner_ID + "=? AND " + I_AD_User.COLUMNNAME_AD_Client_ID + "=?",
+                get_TrxName()
+            )
+                .setParameters(
+                    driver.getC_BPartner_ID(),
+                    getAD_Client_ID()
+                )
+                .setOnlyActiveRecords(true)
+                .getIDs()
+            ;
             if (userIds == null || userIds.length == 0) {
                 log.fine("Driver without users, notification skipped: " + driver.getName());
                 return;
@@ -241,23 +249,27 @@ public class MDDFreight extends X_DD_Freight implements DocAction, DocOptions {
             String subject = Msg.parseTranslation(getCtx(), "@DD_Freight_ID@ " + getDocumentNo());
             StringBuilder text = new StringBuilder(subject);
             if (getDateOrdered() != null) {
-                text.append(Env.NL).append(Msg.parseTranslation(getCtx(), "@DateOrdered@: "))
-                        .append(DisplayType.getDateFormat(DisplayType.Date).format(getDateOrdered()));
+                text.append(Env.NL)
+                    .append(Msg.parseTranslation(getCtx(), "@DateOrdered@: "))
+                    .append(DisplayType.getDateFormat(DisplayType.Date).format(getDateOrdered()))
+                ;
             }
             text.append(Env.NL).append(Msg.parseTranslation(getCtx(), "@Lines@: ")).append(getLines().size());
             if (!Util.isEmpty(getDescription(), true)) {
                 text.append(Env.NL).append(getDescription());
             }
             DefaultNotifier notifier = (DefaultNotifier) QueueLoader.getInstance()
-                    .getQueueManager(DefaultNotifier.QUEUETYPE_DefaultNotifier)
-                    .withContext(getCtx())
-                    .withTransactionName(get_TrxName())
-                    .withOrganizationId(getAD_Org_ID());
+                .getQueueManager(DefaultNotifier.QUEUETYPE_DefaultNotifier)
+                .withContext(getCtx())
+                .withTransactionName(get_TrxName())
+                .withOrganizationId(getAD_Org_ID())
+            ;
             notifier.clearMessage()
-                    .withApplicationType(DefaultNotifier.DefaultNotificationType_UserDefined)
-                    .withUserId(Env.getAD_User_ID(getCtx()))
-                    .withText(text.toString())
-                    .withDescription(subject);
+                .withApplicationType(DefaultNotifier.DefaultNotificationType_UserDefined)
+                .withUserId(Env.getAD_User_ID(getCtx()))
+                .withText(text.toString())
+                .withDescription(subject)
+            ;
             for (int userId : userIds) {
                 notifier.addRecipient(userId);
             }
