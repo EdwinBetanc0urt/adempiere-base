@@ -18,6 +18,7 @@
 
 package org.eevolution.distribution.model;
 
+import org.adempiere.core.domains.models.I_AD_User;
 import org.adempiere.core.domains.models.I_DD_FreightLine;
 import org.adempiere.core.domains.models.X_DD_Freight;
 import org.adempiere.exceptions.AdempiereException;
@@ -30,7 +31,12 @@ import org.compiere.process.DocAction;
 import org.compiere.process.DocOptions;
 import org.compiere.process.DocumentEngine;
 import org.compiere.util.DB;
+import org.compiere.util.DisplayType;
+import org.compiere.util.Env;
 import org.compiere.util.Msg;
+import org.compiere.util.Util;
+import org.spin.queue.notification.DefaultNotifier;
+import org.spin.queue.util.QueueLoader;
 
 import java.io.File;
 import java.math.BigDecimal;
@@ -38,6 +44,7 @@ import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Properties;
+import java.util.logging.Level;
 
 /**
  * Domain Model for Freight Order
@@ -196,11 +203,69 @@ public class MDDFreight extends X_DD_Freight implements DocAction, DocOptions {
 
         // Set the definite document number after completed (if needed)
         setDefiniteDocumentNo();
+        //	Let the driver know that a freight order was assigned
+        notifyDriver();
 
         //
         setProcessed(true);
         setDocAction(ACTION_Close);
         return DocAction.STATUS_Completed;
+    }
+
+    /**
+     * Add a notification to the queue for the users of the driver (AD_User.C_BPartner_ID = DD_Driver.C_BPartner_ID),
+     * so the driver knows that a freight order was assigned. The notification is User Defined: each user receives it
+     * on the channels set in its notification type (e-mail, note, social media / mobile push). It is linked to the
+     * freight order, so the mobile app can open it. A failure is only logged: it never blocks the completion.
+     */
+    private void notifyDriver() {
+        if (getDD_Driver_ID() <= 0) {
+            return;
+        }
+        try {
+            MDDDriver driver = new MDDDriver(getCtx(), getDD_Driver_ID(), get_TrxName());
+            if (driver.getC_BPartner_ID() <= 0) {
+                log.fine("Driver without business partner, notification skipped: " + driver.getName());
+                return;
+            }
+            int[] userIds = new Query(getCtx(), I_AD_User.Table_Name,
+                    I_AD_User.COLUMNNAME_C_BPartner_ID + "=? AND " + I_AD_User.COLUMNNAME_AD_Client_ID + "=?", get_TrxName())
+                    .setParameters(driver.getC_BPartner_ID(), getAD_Client_ID())
+                    .setOnlyActiveRecords(true)
+                    .getIDs();
+            if (userIds == null || userIds.length == 0) {
+                log.fine("Driver without users, notification skipped: " + driver.getName());
+                return;
+            }
+            //	Message
+            String subject = Msg.parseTranslation(getCtx(), "@DD_Freight_ID@ " + getDocumentNo());
+            StringBuilder text = new StringBuilder(subject);
+            if (getDateOrdered() != null) {
+                text.append(Env.NL).append(Msg.parseTranslation(getCtx(), "@DateOrdered@: "))
+                        .append(DisplayType.getDateFormat(DisplayType.Date).format(getDateOrdered()));
+            }
+            text.append(Env.NL).append(Msg.parseTranslation(getCtx(), "@Lines@: ")).append(getLines().size());
+            if (!Util.isEmpty(getDescription(), true)) {
+                text.append(Env.NL).append(getDescription());
+            }
+            DefaultNotifier notifier = (DefaultNotifier) QueueLoader.getInstance()
+                    .getQueueManager(DefaultNotifier.QUEUETYPE_DefaultNotifier)
+                    .withContext(getCtx())
+                    .withTransactionName(get_TrxName())
+                    .withOrganizationId(getAD_Org_ID());
+            notifier.clearMessage()
+                    .withApplicationType(DefaultNotifier.DefaultNotificationType_UserDefined)
+                    .withUserId(Env.getAD_User_ID(getCtx()))
+                    .withText(text.toString())
+                    .withDescription(subject);
+            for (int userId : userIds) {
+                notifier.addRecipient(userId);
+            }
+            notifier.withEntity(this);
+            notifier.addToQueue();
+        } catch (Exception e) {
+            log.log(Level.WARNING, "Driver notification could not be queued for " + getDocumentNo(), e);
+        }
     }
 
     /**
