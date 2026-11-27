@@ -119,6 +119,8 @@ public class CreateFreightOrderFromPackage extends CreateFreightOrderFromPackage
 			if(selectedPackage.getC_BPartner_ID() > 0) {
 				freightLine.setC_BPartner_ID(selectedPackage.getC_BPartner_ID());
 			}
+			//	Ship From, Ship To and Order
+			freightLine.setFromPackage(selectedPackage);
 			freightLine.setIsInvoiced(selectedPackage.isInvoiced());
 			if(isOverwriteFreightCostRule()) {
 				if(getFreightCategoryId() > 0) {
