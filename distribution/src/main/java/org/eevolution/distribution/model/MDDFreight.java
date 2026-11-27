@@ -214,7 +214,9 @@ public class MDDFreight extends X_DD_Freight implements DocAction, DocOptions {
 
     /**
      * Add a notification to the queue for the users of the driver (AD_User.C_BPartner_ID = DD_Driver.C_BPartner_ID),
-     * so the driver knows that a freight order was assigned. The notification is User Defined: each user receives it
+     * so the driver knows that a freight order was assigned. Users of the freight client and System users (client 0,
+     * e.g. internal users that log in several clients) are included: the business partner already ties them to the
+     * driver. The notification is User Defined: each user receives it
      * on the channels set in its notification type (e-mail, note, social media / mobile push). It is linked to the
      * freight order, so the mobile app can open it. A failure is only logged: it never blocks the completion.
      */
@@ -231,7 +233,7 @@ public class MDDFreight extends X_DD_Freight implements DocAction, DocOptions {
             int[] userIds = new Query(
                 getCtx(),
                 I_AD_User.Table_Name,
-                I_AD_User.COLUMNNAME_C_BPartner_ID + "=? AND " + I_AD_User.COLUMNNAME_AD_Client_ID + "=?",
+                I_AD_User.COLUMNNAME_C_BPartner_ID + "=? AND " + I_AD_User.COLUMNNAME_AD_Client_ID + " IN (0, ?)",
                 get_TrxName()
             )
                 .setParameters(
@@ -242,7 +244,7 @@ public class MDDFreight extends X_DD_Freight implements DocAction, DocOptions {
                 .getIDs()
             ;
             if (userIds == null || userIds.length == 0) {
-                log.fine("Driver without users, notification skipped: " + driver.getName());
+                log.info("Driver without users, notification skipped: " + driver.getName());
                 return;
             }
             //	Message
