@@ -519,17 +519,17 @@ public class DefaultNotifier extends QueueManager {
 		StringBuffer errorMessage = new StringBuffer();
 		//	E-mail channel
 		if(!emailRecipients.isEmpty()) {
-			dispatchChannel(getRegistrationByApplicationType(DefaultNotificationType_EMail),
+			dispatchChannel(getRegistrationByApplicationType(source, DefaultNotificationType_EMail),
 					DefaultNotificationType_EMail, source, emailRecipients, errorMessage);
 		}
 		//	Note channel
 		if(!noteRecipients.isEmpty()) {
-			dispatchChannel(getRegistrationByApplicationType(DefaultNotificationType_Notes),
+			dispatchChannel(getRegistrationByApplicationType(source, DefaultNotificationType_Notes),
 					DefaultNotificationType_Notes, source, noteRecipients, errorMessage);
 		}
 		//	Social media channels (one dispatch per app support / registration)
 		socialRecipientsByAppSupport.forEach((applicationSupportId, socialRecipients) ->
-			dispatchChannel(getRegistrationByAppSupport(applicationSupportId),
+			dispatchChannel(getRegistrationByAppSupport(source, applicationSupportId),
 					"@AD_AppSupport_ID@ " + applicationSupportId, source, socialRecipients, errorMessage));
 		//	The notification is processed only when every active recipient is processed
 		boolean allProcessed = source.getRecipients().stream().allMatch(MADNotificationRecipient::isProcessed);
@@ -597,29 +597,68 @@ public class DefaultNotifier extends QueueManager {
 	}
 
 	/**
-	 * Resolve the registration for a channel application type
+	 * Resolve the registration for a channel application type ({@link #findRegistration})
+	 * @param notification the notification to send
 	 * @param applicationType
-	 * @return
+	 * @return the registration or null
 	 */
-	private MADAppRegistration getRegistrationByApplicationType(String applicationType) {
-		return MADAppRegistration.getByApplicationType(getContext(), applicationType, getTransactionName());
+	private MADAppRegistration getRegistrationByApplicationType(MADNotificationQueue notification, String applicationType) {
+		if(Util.isEmpty(applicationType, true)) {
+			return null;
+		}
+		return findRegistration(notification, I_AD_AppRegistration.COLUMNNAME_ApplicationType, applicationType);
 	}
 
 	/**
-	 * Resolve the registration bound to an app support (used for social media accounts)
+	 * Resolve the registration bound to an app support, used for social media accounts ({@link #findRegistration})
+	 * @param notification the notification to send
 	 * @param applicationSupportId
-	 * @return
+	 * @return the registration or null
 	 */
-	private MADAppRegistration getRegistrationByAppSupport(int applicationSupportId) {
+	private MADAppRegistration getRegistrationByAppSupport(MADNotificationQueue notification, int applicationSupportId) {
 		if(applicationSupportId <= 0) {
 			return null;
 		}
-		return new Query(getContext(), I_AD_AppRegistration.Table_Name,
-				I_AD_AppRegistration.COLUMNNAME_AD_AppSupport_ID + " = ?", getTransactionName())
-				.setParameters(applicationSupportId)
+		return findRegistration(notification, I_AD_AppRegistration.COLUMNNAME_AD_AppSupport_ID, applicationSupportId);
+	}
+
+	/**
+	 * Find the active registration of the notification, from the most specific to the most general:
+	 * <ol>
+	 *   <li>the organization of the notification</li>
+	 *   <li>its client (organization *)</li>
+	 *   <li>System</li>
+	 * </ol>
+	 * Usually there is one registration in System; a client or an organization can override it. Registrations of
+	 * other clients are never used.
+	 * @param notification the notification to send (client and organization)
+	 * @param columnName column that identifies the channel (application type or app support)
+	 * @param value value of the column
+	 * @return the registration or null
+	 */
+	private MADAppRegistration findRegistration(MADNotificationQueue notification, String columnName, Object value) {
+		int clientId = notification.getAD_Client_ID();
+		int organizationId = notification.getAD_Org_ID();
+		String key = columnName + "|" + value + "|" + clientId + "|" + organizationId;
+		MADAppRegistration registration = notifierCache.get(key);
+		if(registration != null) {
+			return registration;
+		}
+		registration = new Query(getContext(), I_AD_AppRegistration.Table_Name,
+				columnName + " = ? "
+				+ "AND " + I_AD_AppRegistration.COLUMNNAME_AD_Client_ID + " IN (0, ?) "
+				+ "AND " + I_AD_AppRegistration.COLUMNNAME_AD_Org_ID + " IN (0, ?)", getTransactionName())
+				.setParameters(value, clientId, organizationId)
 				.setOnlyActiveRecords(true)
-				.setOrderBy(I_AD_AppRegistration.COLUMNNAME_AD_Client_ID + " DESC")
+				.setOrderBy(I_AD_AppRegistration.COLUMNNAME_AD_Client_ID + " DESC, "
+						+ I_AD_AppRegistration.COLUMNNAME_AD_Org_ID + " DESC")
 				.first();
+		Optional.ofNullable(registration)
+				.ifPresent(registrationToPut -> {
+					registrationToPut.set_TrxName(null);
+					notifierCache.put(key, registrationToPut);
+				});
+		return registration;
 	}
 	
 	/**
@@ -649,41 +688,23 @@ public class DefaultNotifier extends QueueManager {
 	}
 	
 	/**
-	 * Get registration from cache or search it
+	 * Get the registration of the notification: the one set in it, or else the one of its app support or application
+	 * type for its organization, client or System ({@link #findRegistration})
 	 * @param queue
 	 * @return
 	 */
 	private MADAppRegistration getRegistration(MADNotificationQueue queue) {
-		String key = queue.getApplicationType() + "|" + queue.getAD_AppSupport_ID() + "|" + queue.getAD_AppRegistration_ID();
-		MADAppRegistration registration = notifierCache.get(key);
-		//	Query for it
-		if(registration == null) {
-			if(queue.getAD_AppRegistration_ID() > 0) {
-				registration = MADAppRegistration.getById(
-						getContext(),
-						queue.getAD_AppRegistration_ID(),
-						getTransactionName()
-				);
-			} else if(queue.getAD_AppSupport_ID() > 0) {
-				registration = new Query(getContext(), I_AD_AppRegistration.Table_Name,
-						I_AD_AppRegistration.COLUMNNAME_AD_AppSupport_ID + " = ?", getTransactionName())
-						.setParameters(queue.getAD_AppSupport_ID())
-						.setOnlyActiveRecords(true)
-						.setOrderBy(I_AD_AppRegistration.COLUMNNAME_AD_Client_ID + " DESC")
-						.first();
-			} else if(!Util.isEmpty(queue.getApplicationType())) {
-				registration = MADAppRegistration.getByApplicationType(
-						getContext(),
-						queue.getApplicationType(),
-						getTransactionName()
-				);
-			}
-			//	Set to cache
-			Optional.ofNullable(registration)
-					.ifPresent(registrationToPush -> notifierCache.put(key, registrationToPush));
+		if(queue.getAD_AppRegistration_ID() > 0) {
+			return MADAppRegistration.getById(
+					getContext(),
+					queue.getAD_AppRegistration_ID(),
+					getTransactionName()
+			);
 		}
-		//	return
-		return registration;
+		if(queue.getAD_AppSupport_ID() > 0) {
+			return getRegistrationByAppSupport(queue, queue.getAD_AppSupport_ID());
+		}
+		return getRegistrationByApplicationType(queue, queue.getApplicationType());
 	}
 	
 	public static void main(String[] args) {
