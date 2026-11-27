@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 
+import org.adempiere.exceptions.AdempiereException;
 import org.compiere.model.MAttributeSet;
 import org.compiere.model.MClient;
 import org.compiere.model.MInOut;
@@ -285,6 +286,11 @@ public class SB_InOutGenerateFromOrderLine extends SB_InOutGenerateFromOrderLine
 		catch (Exception e)
 		{
 			log.log(Level.SEVERE, m_sql, e);
+			//	Do not complete a partial shipment silently
+			if (e instanceof AdempiereException) {
+				throw (AdempiereException) e;
+			}
+			throw new AdempiereException("@C_Order_ID@ " + order.getDocumentNo() + ": " + e.getLocalizedMessage(), e);
 		}
 		completeShipment();
 		return "@C_Order_ID@: " + order.getDocumentNo() + "[@M_InOut_ID@ @Created@: " + m_created + "]";
@@ -452,8 +458,10 @@ public class SB_InOutGenerateFromOrderLine extends SB_InOutGenerateFromOrderLine
 		if (m_shipment != null)
 		{
 			//	Fails if there is a confirmation
-			if (!m_shipment.processIt(getDocAction()))
+			if (!m_shipment.processIt(getDocAction())) {
 				log.warning("Failed: " + m_shipment);
+				throw new AdempiereException("@M_InOut_ID@ " + m_shipment.getDocumentNo() + ": " + m_shipment.getProcessMsg());
+			}
 			m_shipment.saveEx();
 			//
 			addLog(m_shipment.getM_InOut_ID(), m_shipment.getMovementDate(), null, m_shipment.getDocumentNo());
