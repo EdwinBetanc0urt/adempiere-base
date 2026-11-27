@@ -98,6 +98,19 @@ public class MDDFreight extends X_DD_Freight implements DocAction, DocOptions {
     }	//	getLines
 
     @Override
+    protected boolean beforeSave(boolean newRecord) {
+        if (getC_DocType_ID() > 0
+                && (newRecord || is_ValueChanged(COLUMNNAME_C_DocType_ID))) {
+            MDocType documentType = MDocType.get(getCtx(), getC_DocType_ID());
+            if (!MDocType.DOCBASETYPE_FreightOrder.equals(documentType.getDocBaseType())) {
+                throw new AdempiereException("@C_DocType_ID@ @Invalid@: " + documentType.getName()
+                        + " (@DocBaseType@ " + MDocType.DOCBASETYPE_FreightOrder + ")");
+            }
+        }
+        return true;
+    }
+
+    @Override
     protected boolean beforeDelete() {
         for (MDDFreightLine line : getLines()) {
             line.deleteEx(true);
